@@ -3,12 +3,12 @@ uvicorn==0.24.0
 python-multipart==0.0.6
 Pillow==10.1.0
 opencv-python==4.8.1.78
-torch==2.1.1
-torchvision==0.16.1
+torch==2.2.0
+torchvision==0.17.0
 transformers==4.35.2
 diffusers==0.21.4
-rembg==2.0.50
-numpy==1.24.3
+rembg==2.0.60
+numpy==1.26.0
 scipy==1.11.4
 aiofiles==23.2.1
 python-dotenv==1.0.0
