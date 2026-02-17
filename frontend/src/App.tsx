@@ -90,16 +90,84 @@ function App() {
     }
   };
 
-  const handleGenerateImage = async (prompt: string) => {
+  const handleGenerateImage = async (prompt: string, stylePreset: string, aspectRatio: string, negativePrompt: string) => {
     setIsProcessing(true);
     setError(undefined);
     try {
-      const blob = await api.generateImage(prompt);
+      const blob = await api.generateWithStyle(prompt, stylePreset, negativePrompt, aspectRatio);
       const url = URL.createObjectURL(blob);
       setProcessedImage(url);
     } catch (err) {
       console.error('Image generation failed:', err);
       setError('Failed to generate image. Make sure AI features are enabled in the backend.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleGenerateFill = async (prompt: string, negativePrompt: string) => {
+    if (!currentFile) return;
+
+    setIsProcessing(true);
+    setError(undefined);
+    try {
+      // This requires a mask from canvas - need to show canvas first
+      setError('Please use the canvas to select an area first, then apply generative fill.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleApplyStyleTransfer = async (stylePrompt: string, strength: number) => {
+    if (!currentFile) return;
+
+    setIsProcessing(true);
+    setError(undefined);
+    try {
+      const blob = await api.applyStyleTransfer(currentFile, stylePrompt, strength);
+      const url = URL.createObjectURL(blob);
+      setProcessedImage(url);
+    } catch (err) {
+      console.error('Style transfer failed:', err);
+      setError('Failed to apply style transfer. Make sure AI features are enabled.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleGenerateTextEffect = async (text: string, style: string) => {
+    setIsProcessing(true);
+    setError(undefined);
+    try {
+      const blob = await api.generateTextEffect(text, style);
+      const url = URL.createObjectURL(blob);
+      setProcessedImage(url);
+    } catch (err) {
+      console.error('Text effect generation failed:', err);
+      setError('Failed to generate text effect. Make sure AI features are enabled.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleOutpaint = async (direction: string, expandPixels: number, prompt: string) => {
+    if (!currentFile) return;
+
+    setIsProcessing(true);
+    setError(undefined);
+    try {
+      const blob = await api.outpaintImage(
+        currentFile,
+        direction as 'left' | 'right' | 'top' | 'bottom' | 'all',
+        expandPixels,
+        prompt
+      );
+      const url = URL.createObjectURL(blob);
+      setProcessedImage(url);
+      setOriginalImage(url); // Update original to show extended image
+    } catch (err) {
+      console.error('Outpainting failed:', err);
+      setError('Failed to extend image. Make sure AI features are enabled.');
     } finally {
       setIsProcessing(false);
     }
@@ -131,7 +199,7 @@ function App() {
         <header className="text-center text-white space-y-2">
           <h1 className="text-5xl font-bold">AI Photo Editor</h1>
           <p className="text-xl opacity-90">
-            Professional image editing powered by artificial intelligence
+            Adobe Firefly-like AI photo editing • Professional image generation & manipulation
           </p>
         </header>
 
@@ -160,8 +228,13 @@ function App() {
                   onApplyFilter={handleApplyFilter}
                   onAdjustBrightness={handleAdjustBrightness}
                   onGenerateImage={handleGenerateImage}
+                  onGenerateFill={handleGenerateFill}
+                  onApplyStyleTransfer={handleApplyStyleTransfer}
+                  onGenerateTextEffect={handleGenerateTextEffect}
+                  onOutpaint={handleOutpaint}
                   disabled={isProcessing}
                   aiEnabled={aiEnabled}
+                  hasImage={!!originalImage}
                 />
 
                 <div className="card">

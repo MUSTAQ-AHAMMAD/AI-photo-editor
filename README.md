@@ -1,6 +1,6 @@
 # AI Photo Editor 🎨✨
 
-A comprehensive AI-powered photo editing application that brings professional-grade image manipulation to your fingertips. Built with FastAPI, React, and cutting-edge machine learning models.
+A comprehensive AI-powered photo editing application with **Adobe Firefly-like features** that brings professional-grade image manipulation to your fingertips. Built with FastAPI, React, and cutting-edge machine learning models.
 
 ![AI Photo Editor](https://img.shields.io/badge/AI-Photo%20Editor-blue)
 ![Python](https://img.shields.io/badge/Python-3.11-green)
@@ -9,12 +9,21 @@ A comprehensive AI-powered photo editing application that brings professional-gr
 
 ## ✨ Features
 
+### Adobe Firefly-like AI Features
+- ✨ **Generative Fill**: AI-powered object insertion and replacement in selected areas
+- 🖼️ **Image Extension (Outpainting)**: Extend image borders intelligently in any direction
+- 🎭 **Style Transfer**: Transform images with AI-powered style recoloring
+- 📝 **Text Effects**: Generate artistic text with various effects (3D, neon, watercolor, etc.)
+- 🎨 **Advanced Text-to-Image**: Generate images with 15+ style presets and multiple aspect ratios
+- 🎯 **Style Presets**: Photorealistic, Digital Art, Anime, Oil Painting, Cinematic, and more
+- 📐 **Aspect Ratios**: Square, Landscape, Portrait, and custom ratios (1:1, 16:9, 9:16, 4:3, etc.)
+
+### Basic Editing Features
 - 🖼️ **Image Upload**: Drag-and-drop interface for easy image uploads
 - 🎯 **Object Removal**: Interactive canvas to select and remove unwanted objects
 - 🌟 **Background Removal**: One-click background removal using RemBG
 - 🎨 **Filters**: Apply various filters (blur, sharpen, edge detection, grayscale)
 - 💡 **Brightness Adjustment**: Fine-tune image brightness
-- 🤖 **AI Generation**: Generate images from text prompts (with Stable Diffusion)
 - 📥 **High-Resolution Export**: Download processed images in full quality
 - 🐳 **Docker Support**: Easy deployment with Docker Compose
 
@@ -101,6 +110,7 @@ npm run dev
 
 ## 📋 API Endpoints
 
+### Basic Endpoints
 - `GET /`: API information
 - `GET /health`: Health check
 - `POST /upload`: Upload an image
@@ -108,7 +118,14 @@ npm run dev
 - `POST /inpaint`: Remove objects using inpainting
 - `POST /apply-filter`: Apply filters to image
 - `POST /adjust-brightness`: Adjust image brightness
-- `POST /generate-image`: Generate images from text (requires Stable Diffusion)
+
+### Adobe Firefly-like Endpoints
+- `POST /generative-fill`: AI-powered object insertion/replacement
+- `POST /outpaint`: Extend image borders with AI
+- `POST /text-effect`: Generate artistic text effects
+- `POST /style-transfer`: Apply style transformation to images
+- `POST /generate-with-style`: Enhanced text-to-image with style presets
+- `GET /style-presets`: Get available style presets and aspect ratios
 
 Full API documentation available at http://localhost:8000/docs
 
@@ -123,7 +140,7 @@ HOST=0.0.0.0
 PORT=8000
 ALLOWED_ORIGINS=http://localhost:3000
 DEVICE=cpu  # or 'cuda' for GPU
-ENABLE_STABLE_DIFFUSION=false  # Set to 'true' to enable AI generation
+ENABLE_STABLE_DIFFUSION=true  # Set to 'true' to enable Adobe Firefly-like AI features
 MODEL_CACHE_DIR=./models
 ```
 
@@ -135,11 +152,38 @@ Create a `.env` file in the `frontend` directory:
 VITE_API_URL=http://localhost:8000
 ```
 
-## 🔧 Advanced Features
+## 🔧 Adobe Firefly-like Features
 
-### Enable AI Image Generation
+### Generative Fill
+AI-powered object insertion and replacement. Select an area with the canvas tool and describe what you want to generate.
 
-To enable Stable Diffusion for AI image generation:
+### Image Extension (Outpainting)
+Extend your images beyond their original borders. Choose direction (left, right, top, bottom, or all) and let AI seamlessly continue the image.
+
+### Style Transfer
+Transform your images with different artistic styles. Apply styles like oil painting, cyberpunk, watercolor, and more.
+
+### Text Effects
+Generate stunning text with artistic effects:
+- 3D Metallic
+- Neon Glow
+- Watercolor
+- Fire Effect
+- Ice Crystal
+- Gold Texture
+
+### Advanced Text-to-Image
+Generate images with enhanced control:
+- **15+ Style Presets**: Photorealistic, Digital Art, Illustration, 3D Render, Anime, Oil Painting, Watercolor, Sketch, Cinematic, Fantasy, Minimalist, Vintage, Neon, Steampunk
+- **Multiple Aspect Ratios**: 1:1, 16:9, 9:16, 4:3, 3:4, 2:3, 3:2
+- **Negative Prompts**: Specify what to avoid in generated images
+- **Guidance Scale**: Control how closely the AI follows your prompt
+
+## 🔧 Advanced Configuration
+
+### Enable AI Features
+
+To enable Adobe Firefly-like AI features:
 
 1. Set `ENABLE_STABLE_DIFFUSION=true` in `backend/.env`
 2. Ensure you have sufficient RAM (8GB+) or use GPU
