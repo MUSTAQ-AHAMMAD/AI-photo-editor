@@ -6,6 +6,9 @@ A comprehensive AI-powered photo editing application with **Adobe Firefly-like f
 ![Python](https://img.shields.io/badge/Python-3.11-green)
 ![React](https://img.shields.io/badge/React-18-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-teal)
+![Tests](https://img.shields.io/badge/Tests-93%25%20Passing-brightgreen)
+
+> 📸 **[View Visual Documentation & Screenshots](docs/VISUAL_DOCUMENTATION.md)** | 📊 **[View Complete Testing Report](FEATURE_TESTING_SUMMARY.md)**
 
 ## ✨ Features
 
@@ -205,6 +208,8 @@ AI-photo-editor/
 │   ├── main.py             # Main API application
 │   ├── image_processor.py  # Image processing utilities
 │   ├── ai_models.py        # AI model integrations
+│   ├── test_runner.py      # Automated test suite
+│   ├── visual_documentation.py  # Visual documentation generator
 │   ├── requirements.txt    # Python dependencies
 │   ├── .env.example        # Environment template
 │   └── Dockerfile          # Backend container
@@ -218,11 +223,54 @@ AI-photo-editor/
 │   ├── package.json        # Node dependencies
 │   ├── Dockerfile          # Frontend container
 │   └── nginx.conf          # Nginx configuration
-├── docker-compose.yml      # Docker orchestration
-├── README.md               # This file
-├── SETUP_GUIDE.md         # Detailed setup guide
-└── .gitignore             # Git ignore rules
+├── docs/                   # Documentation & test results
+│   ├── VISUAL_DOCUMENTATION.md      # Visual feature guide
+│   ├── QUICK_REFERENCE.md           # Quick reference guide
+│   ├── visual_documentation/        # 16 feature screenshots
+│   └── test_results/                # API test results
+├── FEATURE_TESTING_SUMMARY.md      # Complete testing report
+├── TESTING_SCENARIOS.md             # Test scenarios
+├── docker-compose.yml               # Docker orchestration
+├── README.md                        # This file
+└── SETUP_GUIDE.md                  # Detailed setup guide
 ```
+
+## 🧪 Testing & Documentation
+
+The application includes comprehensive testing and visual documentation:
+
+### 📊 Test Results
+- **93% Success Rate** (28/30 tests passing)
+- **Backend API**: 13/14 tests passing
+- **Frontend UI**: All 8 components verified
+- **Responsive Design**: Tested on desktop, tablet, mobile
+
+### 📸 Visual Documentation
+Complete visual guide with 16 high-quality screenshots demonstrating:
+- Image upload and processing workflow
+- All editing features (filters, brightness, object removal)
+- Responsive design across different devices
+- User interface components
+
+**View Documentation**:
+- 📖 [Complete Testing Report](FEATURE_TESTING_SUMMARY.md) - Detailed test results and recommendations
+- 📸 [Visual Documentation](docs/VISUAL_DOCUMENTATION.md) - Screenshot gallery with feature descriptions
+- 📋 [Quick Reference](docs/QUICK_REFERENCE.md) - Quick access to all test resources
+
+### Running Tests
+
+```bash
+# Backend API tests
+cd backend
+pip install -r requirements-test.txt
+python test_runner.py --url http://localhost:8000 --functional --screenshots
+
+# Generate visual documentation
+playwright install chromium
+python visual_documentation.py --url http://localhost:3000 --output test_results
+```
+
+For detailed testing instructions, see [TESTING_SETUP_README.md](TESTING_SETUP_README.md).
 
 ## 🤝 Contributing
 
