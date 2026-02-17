@@ -1,5 +1,6 @@
 /**
  * API service for communicating with the backend.
+ * Adobe Firefly-like features support.
  */
 import axios from 'axios';
 
@@ -24,6 +25,24 @@ export interface HealthResponse {
   status: string;
   ai_models_enabled: boolean;
   device: string;
+}
+
+export interface StylePreset {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface AspectRatio {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+}
+
+export interface StylePresetsResponse {
+  style_presets: StylePreset[];
+  aspect_ratios: AspectRatio[];
 }
 
 /**
@@ -133,6 +152,143 @@ export const generateImage = async (
  */
 export const checkHealth = async (): Promise<HealthResponse> => {
   const response = await api.get<HealthResponse>('/health');
+  return response.data;
+};
+
+// Adobe Firefly-like Features
+
+/**
+ * Get available style presets and aspect ratios.
+ */
+export const getStylePresets = async (): Promise<StylePresetsResponse> => {
+  const response = await api.get<StylePresetsResponse>('/style-presets');
+  return response.data;
+};
+
+/**
+ * Generative Fill: AI-powered object insertion/replacement.
+ */
+export const generativeFill = async (
+  image: File,
+  mask: File,
+  prompt: string,
+  negativePrompt?: string,
+  numInferenceSteps: number = 50,
+  guidanceScale: number = 7.5
+): Promise<Blob> => {
+  const formData = new FormData();
+  formData.append('image', image);
+  formData.append('mask', mask);
+  formData.append('prompt', prompt);
+  if (negativePrompt) {
+    formData.append('negative_prompt', negativePrompt);
+  }
+  formData.append('num_inference_steps', String(numInferenceSteps));
+  formData.append('guidance_scale', String(guidanceScale));
+
+  const response = await api.post('/generative-fill', formData, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+/**
+ * Outpaint: Extend image borders with AI.
+ */
+export const outpaintImage = async (
+  image: File,
+  direction: 'left' | 'right' | 'top' | 'bottom' | 'all',
+  expandPixels: number = 256,
+  prompt?: string,
+  numInferenceSteps: number = 50
+): Promise<Blob> => {
+  const formData = new FormData();
+  formData.append('image', image);
+  formData.append('direction', direction);
+  formData.append('expand_pixels', String(expandPixels));
+  if (prompt) {
+    formData.append('prompt', prompt);
+  }
+  formData.append('num_inference_steps', String(numInferenceSteps));
+
+  const response = await api.post('/outpaint', formData, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+/**
+ * Generate text with artistic effects.
+ */
+export const generateTextEffect = async (
+  text: string,
+  style: string = '3d metallic',
+  width: number = 512,
+  height: number = 512,
+  numInferenceSteps: number = 50
+): Promise<Blob> => {
+  const formData = new FormData();
+  formData.append('text', text);
+  formData.append('style', style);
+  formData.append('width', String(width));
+  formData.append('height', String(height));
+  formData.append('num_inference_steps', String(numInferenceSteps));
+
+  const response = await api.post('/text-effect', formData, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+/**
+ * Apply style transfer to an image.
+ */
+export const applyStyleTransfer = async (
+  image: File,
+  stylePrompt: string,
+  strength: number = 0.75,
+  numInferenceSteps: number = 50
+): Promise<Blob> => {
+  const formData = new FormData();
+  formData.append('image', image);
+  formData.append('style_prompt', stylePrompt);
+  formData.append('strength', String(strength));
+  formData.append('num_inference_steps', String(numInferenceSteps));
+
+  const response = await api.post('/style-transfer', formData, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+/**
+ * Generate image with style presets and aspect ratios (Enhanced text-to-image).
+ */
+export const generateWithStyle = async (
+  prompt: string,
+  stylePreset: string = 'none',
+  negativePrompt?: string,
+  aspectRatio: string = '1:1',
+  numInferenceSteps: number = 50,
+  guidanceScale: number = 7.5,
+  seed?: number
+): Promise<Blob> => {
+  const formData = new FormData();
+  formData.append('prompt', prompt);
+  formData.append('style_preset', stylePreset);
+  if (negativePrompt) {
+    formData.append('negative_prompt', negativePrompt);
+  }
+  formData.append('aspect_ratio', aspectRatio);
+  formData.append('num_inference_steps', String(numInferenceSteps));
+  formData.append('guidance_scale', String(guidanceScale));
+  if (seed !== undefined) {
+    formData.append('seed', String(seed));
+  }
+
+  const response = await api.post('/generate-with-style', formData, {
+    responseType: 'blob',
+  });
   return response.data;
 };
 

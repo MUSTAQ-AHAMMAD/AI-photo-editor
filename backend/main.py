@@ -65,15 +65,30 @@ async def root():
     """Root endpoint with API information."""
     return {
         "name": "AI Photo Editor API",
-        "version": "1.0.0",
+        "version": "2.0.0",
+        "description": "Adobe Firefly-like AI photo editing capabilities",
         "endpoints": {
-            "upload": "/upload",
-            "remove_background": "/remove-background",
-            "inpaint": "/inpaint",
-            "apply_filter": "/apply-filter",
-            "adjust_brightness": "/adjust-brightness",
-            "generate_image": "/generate-image (requires Stable Diffusion)",
-            "health": "/health"
+            "basic": {
+                "upload": "/upload",
+                "remove_background": "/remove-background",
+                "inpaint": "/inpaint",
+                "apply_filter": "/apply-filter",
+                "adjust_brightness": "/adjust-brightness"
+            },
+            "adobe_firefly_features": {
+                "generative_fill": "/generative-fill",
+                "outpaint": "/outpaint",
+                "text_effect": "/text-effect",
+                "style_transfer": "/style-transfer",
+                "generate_with_style": "/generate-with-style"
+            },
+            "legacy": {
+                "generate_image": "/generate-image"
+            },
+            "info": {
+                "health": "/health",
+                "style_presets": "/style-presets"
+            }
         }
     }
 
@@ -339,6 +354,323 @@ async def process_image(image_url: str):
             "/generate-image"
         ]
     }
+
+
+# Adobe Firefly-like Features
+
+@app.get("/style-presets")
+async def get_style_presets():
+    """Get list of available style presets."""
+    return {
+        "style_presets": [
+            {"id": "none", "name": "None", "description": "No style applied"},
+            {"id": "photorealistic", "name": "Photorealistic", "description": "Professional photography style"},
+            {"id": "digital_art", "name": "Digital Art", "description": "Digital artwork style"},
+            {"id": "illustration", "name": "Illustration", "description": "Hand-drawn illustration"},
+            {"id": "3d_render", "name": "3D Render", "description": "3D rendered style"},
+            {"id": "anime", "name": "Anime", "description": "Anime/manga style"},
+            {"id": "oil_painting", "name": "Oil Painting", "description": "Traditional oil painting"},
+            {"id": "watercolor", "name": "Watercolor", "description": "Watercolor painting style"},
+            {"id": "sketch", "name": "Sketch", "description": "Pencil sketch style"},
+            {"id": "cinematic", "name": "Cinematic", "description": "Cinematic film style"},
+            {"id": "fantasy", "name": "Fantasy", "description": "Fantasy art style"},
+            {"id": "minimalist", "name": "Minimalist", "description": "Minimalist design"},
+            {"id": "vintage", "name": "Vintage", "description": "Vintage/retro style"},
+            {"id": "neon", "name": "Neon", "description": "Neon cyberpunk style"},
+            {"id": "steampunk", "name": "Steampunk", "description": "Steampunk aesthetic"}
+        ],
+        "aspect_ratios": [
+            {"id": "1:1", "name": "Square", "width": 512, "height": 512},
+            {"id": "16:9", "name": "Landscape Wide", "width": 768, "height": 432},
+            {"id": "9:16", "name": "Portrait Tall", "width": 432, "height": 768},
+            {"id": "4:3", "name": "Landscape", "width": 640, "height": 480},
+            {"id": "3:4", "name": "Portrait", "width": 480, "height": 640},
+            {"id": "2:3", "name": "Portrait Photo", "width": 512, "height": 768},
+            {"id": "3:2", "name": "Landscape Photo", "width": 768, "height": 512}
+        ]
+    }
+
+
+@app.post("/generative-fill")
+async def generative_fill(
+    image: UploadFile = File(...),
+    mask: UploadFile = File(...),
+    prompt: str = Form(...),
+    negative_prompt: Optional[str] = Form(None),
+    num_inference_steps: int = Form(50),
+    guidance_scale: float = Form(7.5)
+):
+    """
+    Generative Fill: AI-powered object insertion/replacement (Adobe Firefly-like).
+
+    Args:
+        image: Original image file
+        mask: Binary mask (white=generate, black=keep original)
+        prompt: Description of what to generate in masked area
+        negative_prompt: What to avoid generating
+        num_inference_steps: Number of denoising steps (10-50)
+        guidance_scale: How closely to follow prompt (1.0-15.0)
+
+    Returns:
+        Image with generative fill applied
+    """
+    if ai_models is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features not enabled. Set ENABLE_STABLE_DIFFUSION=true in .env"
+        )
+
+    try:
+        # Read images
+        image_contents = await image.read()
+        mask_contents = await mask.read()
+
+        img = processor.load_image(image_contents)
+        mask_img = processor.load_image(mask_contents)
+
+        # Apply generative fill
+        result = ai_models.generative_fill(
+            image=img,
+            mask=mask_img,
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale
+        )
+
+        # Convert to bytes
+        output = processor.to_bytes(result, format="PNG")
+
+        return StreamingResponse(
+            io.BytesIO(output),
+            media_type="image/png",
+            headers={"Content-Disposition": f"attachment; filename=generative-fill-{image.filename}"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Generative fill failed: {str(e)}")
+
+
+@app.post("/outpaint")
+async def outpaint_image(
+    image: UploadFile = File(...),
+    direction: str = Form("all"),
+    expand_pixels: int = Form(256),
+    prompt: Optional[str] = Form(""),
+    num_inference_steps: int = Form(50)
+):
+    """
+    Image Extension/Outpainting: Extend image borders with AI (Adobe Firefly-like).
+
+    Args:
+        image: Original image file
+        direction: Direction to extend ("left", "right", "top", "bottom", "all")
+        expand_pixels: Number of pixels to expand (64-512)
+        prompt: Description to guide the extension
+        num_inference_steps: Number of denoising steps (10-50)
+
+    Returns:
+        Extended image
+    """
+    if ai_models is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features not enabled. Set ENABLE_STABLE_DIFFUSION=true in .env"
+        )
+
+    try:
+        # Validate parameters
+        if direction not in ["left", "right", "top", "bottom", "all"]:
+            raise HTTPException(status_code=400, detail="Invalid direction")
+
+        if expand_pixels < 64 or expand_pixels > 512:
+            raise HTTPException(status_code=400, detail="expand_pixels must be between 64 and 512")
+
+        # Read image
+        image_contents = await image.read()
+        img = processor.load_image(image_contents)
+
+        # Apply outpainting
+        result = ai_models.outpaint_image(
+            image=img,
+            direction=direction,
+            expand_pixels=expand_pixels,
+            prompt=prompt,
+            num_inference_steps=num_inference_steps
+        )
+
+        # Convert to bytes
+        output = processor.to_bytes(result, format="PNG")
+
+        return StreamingResponse(
+            io.BytesIO(output),
+            media_type="image/png",
+            headers={"Content-Disposition": f"attachment; filename=outpainted-{image.filename}"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Outpainting failed: {str(e)}")
+
+
+@app.post("/text-effect")
+async def generate_text_effect(
+    text: str = Form(...),
+    style: str = Form("3d metallic"),
+    width: int = Form(512),
+    height: int = Form(512),
+    num_inference_steps: int = Form(50)
+):
+    """
+    Generate text with artistic effects (Adobe Firefly-like text effects).
+
+    Args:
+        text: The text to generate
+        style: Style description (e.g., "3d metallic", "neon glow", "watercolor")
+        width: Output width (256-1024)
+        height: Output height (256-1024)
+        num_inference_steps: Number of denoising steps (10-50)
+
+    Returns:
+        Generated text effect image
+    """
+    if ai_models is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features not enabled. Set ENABLE_STABLE_DIFFUSION=true in .env"
+        )
+
+    try:
+        # Validate dimensions
+        if width < 256 or width > 1024 or height < 256 or height > 1024:
+            raise HTTPException(status_code=400, detail="Width and height must be between 256 and 1024")
+
+        # Generate text effect
+        result = ai_models.generate_text_effect(
+            text=text,
+            style=style,
+            width=width,
+            height=height,
+            num_inference_steps=num_inference_steps
+        )
+
+        # Convert to bytes
+        output = processor.to_bytes(result, format="PNG")
+
+        return StreamingResponse(
+            io.BytesIO(output),
+            media_type="image/png",
+            headers={"Content-Disposition": f"attachment; filename=text-effect-{text}.png"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Text effect generation failed: {str(e)}")
+
+
+@app.post("/style-transfer")
+async def apply_style_transfer(
+    image: UploadFile = File(...),
+    style_prompt: str = Form(...),
+    strength: float = Form(0.75),
+    num_inference_steps: int = Form(50)
+):
+    """
+    Apply style transfer to an image (Adobe Firefly-like recolor/style).
+
+    Args:
+        image: Original image file
+        style_prompt: Description of desired style
+        strength: How much to transform (0.0-1.0)
+        num_inference_steps: Number of denoising steps (10-50)
+
+    Returns:
+        Styled image
+    """
+    if ai_models is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features not enabled. Set ENABLE_STABLE_DIFFUSION=true in .env"
+        )
+
+    try:
+        # Validate strength
+        if strength < 0.0 or strength > 1.0:
+            raise HTTPException(status_code=400, detail="Strength must be between 0.0 and 1.0")
+
+        # Read image
+        image_contents = await image.read()
+        img = processor.load_image(image_contents)
+
+        # Apply style transfer
+        result = ai_models.apply_style_transfer(
+            image=img,
+            style_prompt=style_prompt,
+            strength=strength,
+            num_inference_steps=num_inference_steps
+        )
+
+        # Convert to bytes
+        output = processor.to_bytes(result, format="PNG")
+
+        return StreamingResponse(
+            io.BytesIO(output),
+            media_type="image/png",
+            headers={"Content-Disposition": f"attachment; filename=styled-{image.filename}"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Style transfer failed: {str(e)}")
+
+
+@app.post("/generate-with-style")
+async def generate_with_style(
+    prompt: str = Form(...),
+    style_preset: str = Form("none"),
+    negative_prompt: Optional[str] = Form(None),
+    aspect_ratio: str = Form("1:1"),
+    num_inference_steps: int = Form(50),
+    guidance_scale: float = Form(7.5),
+    seed: Optional[int] = Form(None)
+):
+    """
+    Generate image with style presets (Adobe Firefly-like).
+    Enhanced version of text-to-image with style presets and aspect ratios.
+
+    Args:
+        prompt: Text description of desired image
+        style_preset: Style preset to apply (see /style-presets)
+        negative_prompt: What to avoid in the image
+        aspect_ratio: Aspect ratio ("1:1", "16:9", "9:16", "4:3", "3:4", etc.)
+        num_inference_steps: Number of denoising steps (10-50)
+        guidance_scale: How closely to follow prompt (1.0-15.0)
+        seed: Random seed for reproducibility
+
+    Returns:
+        Generated image with applied style
+    """
+    if ai_models is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features not enabled. Set ENABLE_STABLE_DIFFUSION=true in .env"
+        )
+
+    try:
+        # Generate image with style
+        result = ai_models.generate_with_style(
+            prompt=prompt,
+            style_preset=style_preset,
+            negative_prompt=negative_prompt,
+            aspect_ratio=aspect_ratio,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            seed=seed
+        )
+
+        # Convert to bytes
+        output = processor.to_bytes(result, format="PNG")
+
+        return StreamingResponse(
+            io.BytesIO(output),
+            media_type="image/png",
+            headers={"Content-Disposition": f"attachment; filename=generated-{style_preset}.png"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
 
 
 if __name__ == "__main__":

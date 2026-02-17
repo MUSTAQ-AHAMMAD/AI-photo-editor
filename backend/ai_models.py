@@ -2,15 +2,22 @@
 AI model integrations for advanced image generation and manipulation.
 Includes Stable Diffusion and other generative models.
 Supports multiple model versions for optimal results.
+Adobe Firefly-like features: Generative Fill, Outpainting, Style Transfer, etc.
 """
 import os
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 import torch
-from PIL import Image
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 # Optional imports for AI models
 try:
-    from diffusers import StableDiffusionPipeline, StableDiffusionInpaintPipeline
+    from diffusers import (
+        StableDiffusionPipeline,
+        StableDiffusionInpaintPipeline,
+        StableDiffusionImg2ImgPipeline,
+        DPMSolverMultistepScheduler
+    )
     DIFFUSERS_AVAILABLE = True
 except ImportError:
     DIFFUSERS_AVAILABLE = False
@@ -60,6 +67,7 @@ class AIModelManager:
         self.model_cache_dir = model_cache_dir
         self.sd_pipeline = None
         self.inpaint_pipeline = None
+        self.img2img_pipeline = None
         self.loaded_models: Dict[str, any] = {}
         self.current_model_id = None
 
@@ -302,6 +310,333 @@ class AIModelManager:
             List of loaded model identifiers
         """
         return list(self.loaded_models.keys())
+
+    # Adobe Firefly-like Features
+
+    def generative_fill(
+        self,
+        image: Image.Image,
+        mask: Image.Image,
+        prompt: str,
+        negative_prompt: Optional[str] = None,
+        num_inference_steps: int = 50,
+        guidance_scale: float = 7.5
+    ) -> Image.Image:
+        """
+        Generative Fill: AI-powered object insertion/replacement (Adobe Firefly-like).
+
+        Args:
+            image: Original PIL Image
+            mask: Binary mask (white=generate, black=keep original)
+            prompt: Description of what to generate in masked area
+            negative_prompt: What to avoid generating
+            num_inference_steps: Number of denoising steps
+            guidance_scale: How closely to follow the prompt
+
+        Returns:
+            Image with generative fill applied
+        """
+        if self.inpaint_pipeline is None:
+            self.load_inpaint_model()
+
+        # Ensure images are RGB
+        image = image.convert("RGB")
+        mask = mask.convert("RGB")
+
+        # Resize to supported dimensions (multiples of 8)
+        width, height = image.size
+        width = (width // 8) * 8
+        height = (height // 8) * 8
+        image = image.resize((width, height), Image.Resampling.LANCZOS)
+        mask = mask.resize((width, height), Image.Resampling.LANCZOS)
+
+        result = self.inpaint_pipeline(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            image=image,
+            mask_image=mask,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale
+        )
+
+        return result.images[0]
+
+    def outpaint_image(
+        self,
+        image: Image.Image,
+        direction: str = "all",
+        expand_pixels: int = 256,
+        prompt: str = "",
+        num_inference_steps: int = 50
+    ) -> Image.Image:
+        """
+        Image Extension/Outpainting: Extend image borders with AI (Adobe Firefly-like).
+
+        Args:
+            image: Original PIL Image
+            direction: Direction to extend ("left", "right", "top", "bottom", "all")
+            expand_pixels: Number of pixels to expand
+            prompt: Description to guide the extension (empty for automatic)
+            num_inference_steps: Number of denoising steps
+
+        Returns:
+            Extended image
+        """
+        if self.inpaint_pipeline is None:
+            self.load_inpaint_model()
+
+        width, height = image.size
+
+        # Calculate new dimensions
+        if direction == "all":
+            new_width = width + expand_pixels * 2
+            new_height = height + expand_pixels * 2
+            paste_x, paste_y = expand_pixels, expand_pixels
+        elif direction == "left":
+            new_width = width + expand_pixels
+            new_height = height
+            paste_x, paste_y = expand_pixels, 0
+        elif direction == "right":
+            new_width = width + expand_pixels
+            new_height = height
+            paste_x, paste_y = 0, 0
+        elif direction == "top":
+            new_width = width
+            new_height = height + expand_pixels
+            paste_x, paste_y = 0, expand_pixels
+        elif direction == "bottom":
+            new_width = width
+            new_height = height + expand_pixels
+            paste_x, paste_y = 0, 0
+        else:
+            raise ValueError(f"Invalid direction: {direction}")
+
+        # Ensure dimensions are multiples of 8
+        new_width = (new_width // 8) * 8
+        new_height = (new_height // 8) * 8
+
+        # Create extended canvas
+        extended_image = Image.new("RGB", (new_width, new_height), (255, 255, 255))
+        extended_image.paste(image, (paste_x, paste_y))
+
+        # Create mask (white = areas to fill)
+        mask = Image.new("RGB", (new_width, new_height), (255, 255, 255))
+        mask_draw = ImageDraw.Draw(mask)
+        mask_draw.rectangle(
+            [(paste_x, paste_y), (paste_x + width, paste_y + height)],
+            fill=(0, 0, 0)
+        )
+
+        # Use image content as prompt if not provided
+        if not prompt:
+            prompt = "natural continuation of the image, seamless extension, consistent style"
+
+        result = self.inpaint_pipeline(
+            prompt=prompt,
+            image=extended_image,
+            mask_image=mask,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=7.5
+        )
+
+        return result.images[0]
+
+    def load_img2img_pipeline(self, model_key: str = "sd-v1-5") -> None:
+        """
+        Load image-to-image pipeline for style transfer and variations.
+
+        Args:
+            model_key: Model key from AVAILABLE_MODELS
+        """
+        if not DIFFUSERS_AVAILABLE:
+            raise RuntimeError("diffusers library is not available.")
+
+        if model_key in AVAILABLE_MODELS:
+            model_id = AVAILABLE_MODELS[model_key]["id"]
+        else:
+            model_id = model_key
+
+        if self.img2img_pipeline is not None:
+            print(f"Img2Img pipeline already loaded")
+            return
+
+        print(f"Loading Img2Img pipeline: {model_id}")
+        self.img2img_pipeline = StableDiffusionImg2ImgPipeline.from_pretrained(
+            model_id,
+            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
+            cache_dir=self.model_cache_dir
+        )
+        self.img2img_pipeline = self.img2img_pipeline.to(self.device)
+        self.loaded_models[f"{model_id}-img2img"] = self.img2img_pipeline
+        print(f"Img2Img pipeline loaded successfully")
+
+    def apply_style_transfer(
+        self,
+        image: Image.Image,
+        style_prompt: str,
+        strength: float = 0.75,
+        num_inference_steps: int = 50
+    ) -> Image.Image:
+        """
+        Apply style transfer to an image (Adobe Firefly-like recolor/style).
+
+        Args:
+            image: Original PIL Image
+            style_prompt: Description of desired style
+            strength: How much to transform (0.0-1.0)
+            num_inference_steps: Number of denoising steps
+
+        Returns:
+            Styled image
+        """
+        if self.img2img_pipeline is None:
+            self.load_img2img_pipeline()
+
+        # Ensure image is RGB
+        image = image.convert("RGB")
+
+        # Resize to supported dimensions
+        width, height = image.size
+        width = (width // 8) * 8
+        height = (height // 8) * 8
+        image = image.resize((width, height), Image.Resampling.LANCZOS)
+
+        result = self.img2img_pipeline(
+            prompt=style_prompt,
+            image=image,
+            strength=strength,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=7.5
+        )
+
+        return result.images[0]
+
+    def generate_text_effect(
+        self,
+        text: str,
+        style: str = "3d metallic",
+        width: int = 512,
+        height: int = 512,
+        num_inference_steps: int = 50
+    ) -> Image.Image:
+        """
+        Generate text with artistic effects (Adobe Firefly-like text effects).
+
+        Args:
+            text: The text to generate
+            style: Style description (e.g., "3d metallic", "neon glow", "watercolor")
+            width: Output width
+            height: Output height
+            num_inference_steps: Number of denoising steps
+
+        Returns:
+            Generated text effect image
+        """
+        if self.sd_pipeline is None:
+            self.load_stable_diffusion()
+
+        # Create detailed prompt for text effect
+        prompt = f"{style} text effect with the word '{text}', high quality, artistic, professional design"
+
+        result = self.sd_pipeline(
+            prompt=prompt,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=7.5,
+            width=width,
+            height=height
+        )
+
+        return result.images[0]
+
+    def enhance_with_style_presets(
+        self,
+        prompt: str,
+        style_preset: str = "none"
+    ) -> str:
+        """
+        Enhance prompt with style presets (Adobe Firefly-like).
+
+        Args:
+            prompt: Base prompt
+            style_preset: Style preset name
+
+        Returns:
+            Enhanced prompt
+        """
+        style_presets = {
+            "none": prompt,
+            "photorealistic": f"{prompt}, photorealistic, highly detailed, 8k, professional photography",
+            "digital_art": f"{prompt}, digital art, trending on artstation, detailed, vibrant colors",
+            "illustration": f"{prompt}, illustration, hand drawn, artistic, detailed",
+            "3d_render": f"{prompt}, 3d render, octane render, highly detailed, professional",
+            "anime": f"{prompt}, anime style, detailed, vibrant, professional anime art",
+            "oil_painting": f"{prompt}, oil painting, artistic, painterly, detailed brushwork",
+            "watercolor": f"{prompt}, watercolor painting, artistic, soft colors, flowing",
+            "sketch": f"{prompt}, pencil sketch, hand drawn, artistic, detailed linework",
+            "cinematic": f"{prompt}, cinematic lighting, dramatic, film grain, professional cinematography",
+            "fantasy": f"{prompt}, fantasy art, magical, ethereal, detailed, epic",
+            "minimalist": f"{prompt}, minimalist, simple, clean design, elegant",
+            "vintage": f"{prompt}, vintage style, retro, aged, nostalgic",
+            "neon": f"{prompt}, neon lights, vibrant colors, glowing, cyberpunk",
+            "steampunk": f"{prompt}, steampunk style, mechanical, brass, Victorian era technology"
+        }
+
+        return style_presets.get(style_preset, prompt)
+
+    def generate_with_style(
+        self,
+        prompt: str,
+        style_preset: str = "none",
+        negative_prompt: Optional[str] = None,
+        aspect_ratio: str = "1:1",
+        num_inference_steps: int = 50,
+        guidance_scale: float = 7.5,
+        seed: Optional[int] = None
+    ) -> Image.Image:
+        """
+        Generate image with style presets (Adobe Firefly-like).
+
+        Args:
+            prompt: Text description
+            style_preset: Style preset to apply
+            negative_prompt: What to avoid
+            aspect_ratio: Aspect ratio ("1:1", "16:9", "9:16", "4:3", "3:4")
+            num_inference_steps: Number of denoising steps
+            guidance_scale: How closely to follow prompt
+            seed: Random seed for reproducibility
+
+        Returns:
+            Generated image
+        """
+        # Apply style preset
+        enhanced_prompt = self.enhance_with_style_presets(prompt, style_preset)
+
+        # Calculate dimensions based on aspect ratio
+        aspect_ratios = {
+            "1:1": (512, 512),
+            "16:9": (768, 432),
+            "9:16": (432, 768),
+            "4:3": (640, 480),
+            "3:4": (480, 640),
+            "2:3": (512, 768),
+            "3:2": (768, 512)
+        }
+
+        width, height = aspect_ratios.get(aspect_ratio, (512, 512))
+
+        # Ensure dimensions are multiples of 8
+        width = (width // 8) * 8
+        height = (height // 8) * 8
+
+        return self.generate_image(
+            prompt=enhanced_prompt,
+            negative_prompt=negative_prompt,
+            width=width,
+            height=height,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            seed=seed
+        )
 
 
 # Global instance
