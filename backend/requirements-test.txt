@@ -1,0 +1,28 @@
+# Testing Requirements
+# Install with: pip install -r requirements-test.txt
+
+# HTTP testing
+requests==2.31.0
+
+# Browser automation for visual documentation
+playwright==1.44.0
+
+# Image processing for test data
+Pillow==10.2.0
+
+# Progress bars
+tqdm==4.66.1
+
+# Colored terminal output
+colorama==0.4.6
+
+# Test reporting
+pytest==8.1.1
+pytest-asyncio==0.23.6
+
+# Performance testing
+locust==2.24.0
+
+# Optional: Deep learning for advanced testing
+# torch==2.6.0  (already in main requirements)
+# torchvision==0.21.0  (already in main requirements)
