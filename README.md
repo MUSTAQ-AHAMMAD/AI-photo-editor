@@ -62,6 +62,7 @@ A comprehensive AI-powered photo editing application with advanced AI features t
 
 - Docker and Docker Compose (recommended)
 - OR Python 3.12+ and Node.js 20+ (for local development)
+  - **Note:** Python 3.12.x is recommended for best compatibility. Python 3.13+ works but may require additional setup on Windows. See [SETUP_GUIDE.md](SETUP_GUIDE.md#7-numpyscipy-build-errors-on-windows-python-313) for details.
 
 ### Option 1: Docker (Recommended)
 
