@@ -8,7 +8,31 @@ A comprehensive AI-powered photo editing application with **Adobe Firefly-like f
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-teal)
 ![Tests](https://img.shields.io/badge/Tests-93%25%20Passing-brightgreen)
 
-> 📸 **[View Visual Documentation & Screenshots](docs/VISUAL_DOCUMENTATION.md)** | 📊 **[View Complete Testing Report](FEATURE_TESTING_SUMMARY.md)**
+---
+
+## 🎨 See It In Action!
+
+**Want to see how the application looks?** Check out our complete visual documentation:
+
+- 🖼️ **[Visual Gallery (HTML)](docs/VISUAL_GALLERY.html)** - Interactive gallery with all 16 screenshots
+- 📸 **[Visual README](docs/README_VISUAL.md)** - All screenshots displayed inline
+- 📋 **[Quick Reference](docs/QUICK_REFERENCE.md)** - Fast access to all resources
+- 📊 **[Complete Testing Report](FEATURE_TESTING_SUMMARY.md)** - Detailed test results
+
+**Sample Screenshots:**
+
+<table>
+  <tr>
+    <td><img src="docs/visual_documentation/04_04_after_upload.png" alt="Main Interface" width="400"/></td>
+    <td><img src="docs/visual_documentation/08_09_brightness_control.png" alt="Editing Tools" width="400"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Main Interface with Image Loaded</b></td>
+    <td align="center"><b>Brightness Adjustment Control</b></td>
+  </tr>
+</table>
+
+---
 
 ## ✨ Features
 

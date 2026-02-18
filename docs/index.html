@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Photo Editor - Documentation Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.3em;
+            margin-bottom: 50px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 35px 25px;
+            border-radius: 15px;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .card-icon {
+            font-size: 3em;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .card-description {
+            font-size: 0.95em;
+            opacity: 0.95;
+            line-height: 1.5;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 50px 0 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .highlight {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 25px;
+            margin: 40px 0;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .highlight h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .highlight ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .highlight li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .highlight li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5em;
+            }
+            .container {
+                padding: 40px 25px;
+            }
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 AI Photo Editor</h1>
+        <p class="subtitle">Complete Visual Documentation & Testing Results</p>
+
+        <div class="stats">
+            <div class="stat">
+                <span class="stat-number">93%</span>
+                <span class="stat-label">Tests Passed</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">16</span>
+                <span class="stat-label">Screenshots</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">11</span>
+                <span class="stat-label">Features</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">&lt;50ms</span>
+                <span class="stat-label">Avg Speed</span>
+            </div>
+        </div>
+
+        <div class="cards">
+            <a href="docs/VISUAL_GALLERY.html" class="card">
+                <span class="card-icon">🖼️</span>
+                <div class="card-title">Visual Gallery</div>
+                <div class="card-description">
+                    Interactive gallery with all 16 screenshots in a beautiful layout
+                </div>
+            </a>
+
+            <a href="docs/README_VISUAL.md" class="card">
+                <span class="card-icon">📸</span>
+                <div class="card-title">Visual README</div>
+                <div class="card-description">
+                    Complete walkthrough with all screenshots displayed inline
+                </div>
+            </a>
+
+            <a href="FEATURE_TESTING_SUMMARY.md" class="card">
+                <span class="card-icon">📊</span>
+                <div class="card-title">Testing Report</div>
+                <div class="card-description">
+                    Comprehensive testing results with metrics and recommendations
+                </div>
+            </a>
+
+            <a href="docs/VISUAL_DOCUMENTATION.md" class="card">
+                <span class="card-icon">📖</span>
+                <div class="card-title">Documentation</div>
+                <div class="card-description">
+                    Detailed feature descriptions and technical documentation
+                </div>
+            </a>
+
+            <a href="docs/QUICK_REFERENCE.md" class="card">
+                <span class="card-icon">⚡</span>
+                <div class="card-title">Quick Reference</div>
+                <div class="card-description">
+                    Fast access to test metrics and all documentation resources
+                </div>
+            </a>
+
+            <a href="README.md" class="card">
+                <span class="card-icon">🏠</span>
+                <div class="card-title">Main README</div>
+                <div class="card-description">
+                    Project overview, setup instructions, and getting started
+                </div>
+            </a>
+        </div>
+
+        <div class="highlight">
+            <h3>✨ What's Included</h3>
+            <ul>
+                <li>Complete visual documentation with 16 high-quality screenshots</li>
+                <li>Interactive HTML gallery for easy browsing</li>
+                <li>Comprehensive testing report (93% success rate)</li>
+                <li>API test results with performance metrics</li>
+                <li>Responsive design examples (desktop, tablet, mobile)</li>
+                <li>Feature demonstrations with before/after comparisons</li>
+            </ul>
+        </div>
+
+        <div class="highlight">
+            <h3>🎯 Key Features Documented</h3>
+            <ul>
+                <li>Image Upload with drag-and-drop support</li>
+                <li>Blur, Sharpen, Edge Detection & Grayscale filters</li>
+                <li>Brightness adjustment (0.5x to 2.0x)</li>
+                <li>Object removal with interactive canvas</li>
+                <li>Background removal (AI-powered)</li>
+                <li>High-resolution PNG export</li>
+                <li>Fully responsive design across all devices</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p><strong>AI Photo Editor v2.0.0</strong></p>
+            <p>Testing completed: February 17, 2026</p>
+            <p>28 out of 30 tests passed • Zero security vulnerabilities</p>
+            <p style="margin-top: 15px;">
+                <a href="https://github.com/MUSTAQ-AHAMMAD/AI-photo-editor" 
+                   style="color: #667eea; text-decoration: none; font-weight: bold;">
+                    🔗 View on GitHub
+                </a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
