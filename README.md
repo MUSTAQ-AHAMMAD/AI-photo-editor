@@ -46,6 +46,16 @@ This project now includes **state-of-the-art AI libraries** for superior image g
 
 ---
 
+## 🚀 Quick Start with Advanced AI
+
+**New to the advanced features?** Check out our quick start guide:
+
+📘 **[Quick Start: Advanced AI Features](QUICKSTART_ADVANCED_AI.md)** - Get up and running with Gemini Pro, ControlNet, and SDXL in 5 minutes!
+
+📚 **[Complete Advanced AI Guide](ADVANCED_AI_FEATURES.md)** - Comprehensive documentation with examples and API reference
+
+---
+
 ## 🎨 See It In Action!
 
 **Want to see how the application looks?** Check out our complete visual documentation:
