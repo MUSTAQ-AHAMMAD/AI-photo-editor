@@ -1,6 +1,6 @@
 /**
  * API service for communicating with the backend.
- * Adobe Firefly-like features support.
+ * Advanced AI features support.
  */
 import axios from 'axios';
 
