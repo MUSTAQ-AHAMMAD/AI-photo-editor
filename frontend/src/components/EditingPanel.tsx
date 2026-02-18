@@ -115,20 +115,22 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
   ];
 
   return (
-    <div className="space-y-4 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800">Adobe Firefly Tools</h2>
+    <div className="space-y-4 p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-xl border border-gray-100">
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+        Advanced AI Tools
+      </h2>
 
       {/* Tab Navigation */}
-      <div className="flex space-x-2 border-b-2 border-gray-200">
+      <div className="flex space-x-2 border-b border-gray-200 pb-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             disabled={tab.requiresAI && !aiEnabled}
-            className={`px-4 py-2 font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+            className={`px-5 py-2.5 font-semibold rounded-t-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed ${
               activeTab === tab.id
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md transform -translate-y-0.5'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
             {tab.icon} {tab.name}
@@ -138,32 +140,36 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
 
       {/* Basic Tab */}
       {activeTab === 'basic' && (
-        <div className="space-y-4">
+        <div className="space-y-4 pt-4">
           {/* Background Removal */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-700">Background</h3>
+          <div className="space-y-2 p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-2xl">🎭</span> Background
+            </h3>
             <button
               onClick={onRemoveBackground}
               disabled={disabled || !hasImage}
-              className="w-full px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
             >
               Remove Background
             </button>
           </div>
 
           {/* Filters */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-700">Filters</h3>
+          <div className="space-y-2 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-2xl">🎨</span> Filters
+            </h3>
             <div className="grid grid-cols-2 gap-2">
               {(['none', 'blur', 'sharpen', 'edge', 'grayscale'] as FilterType[]).map((filter) => (
                 <button
                   key={filter}
                   onClick={() => handleFilterChange(filter)}
                   disabled={disabled || !hasImage}
-                  className={`px-4 py-2 rounded transition-colors capitalize disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`px-4 py-2.5 rounded-lg transition-all duration-200 capitalize disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow-md ${
                     selectedFilter === filter
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
                   }`}
                 >
                   {filter}
@@ -173,9 +179,9 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
           </div>
 
           {/* Brightness */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-700">
-              Brightness: {brightness.toFixed(1)}x
+          <div className="space-y-2 p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl border border-amber-200">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-2xl">💡</span> Brightness: <span className="text-amber-600">{brightness.toFixed(1)}x</span>
             </h3>
             <input
               type="range"
@@ -185,7 +191,7 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
               value={brightness}
               onChange={(e) => handleBrightnessChange(Number(e.target.value))}
               disabled={disabled || !hasImage}
-              className="w-full"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
             />
           </div>
         </div>
@@ -193,74 +199,84 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
 
       {/* Generate Tab */}
       {activeTab === 'generate' && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-700">Text to Image</h3>
-          <input
-            type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe the image you want to generate..."
-            disabled={disabled}
-            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Style Preset</label>
-            <select
-              value={stylePreset}
-              onChange={(e) => setStylePreset(e.target.value)}
+        <div className="space-y-4 pt-4">
+          <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl border border-green-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="text-2xl">✨</span> Text to Image Generation
+            </h3>
+            <input
+              type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe the image you want to generate..."
               disabled={disabled}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {stylePresets.map((preset) => (
-                <option key={preset.id} value={preset.id}>
-                  {preset.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              className="w-full px-4 py-3 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+            />
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Aspect Ratio</label>
-            <select
-              value={aspectRatio}
-              onChange={(e) => setAspectRatio(e.target.value)}
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span>🎨</span> Style Preset
+              </label>
+              <select
+                value={stylePreset}
+                onChange={(e) => setStylePreset(e.target.value)}
+                disabled={disabled}
+                className="w-full px-4 py-3 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm bg-white"
+              >
+                {stylePresets.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span>📐</span> Aspect Ratio
+              </label>
+              <select
+                value={aspectRatio}
+                onChange={(e) => setAspectRatio(e.target.value)}
+                disabled={disabled}
+                className="w-full px-4 py-3 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm bg-white"
+              >
+                {aspectRatios.map((ratio) => (
+                  <option key={ratio.id} value={ratio.id}>
+                    {ratio.name} ({ratio.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <input
+              type="text"
+              value={negativePrompt}
+              onChange={(e) => setNegativePrompt(e.target.value)}
+              placeholder="What to avoid (optional)..."
               disabled={disabled}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 mt-4 border-2 border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+            />
+
+            <button
+              onClick={handleGenerateImage}
+              disabled={disabled || !prompt.trim()}
+              className="w-full px-4 py-3 mt-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
             >
-              {aspectRatios.map((ratio) => (
-                <option key={ratio.id} value={ratio.id}>
-                  {ratio.name} ({ratio.id})
-                </option>
-              ))}
-            </select>
+              Generate Image
+            </button>
           </div>
-
-          <input
-            type="text"
-            value={negativePrompt}
-            onChange={(e) => setNegativePrompt(e.target.value)}
-            placeholder="What to avoid (optional)..."
-            disabled={disabled}
-            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-
-          <button
-            onClick={handleGenerateImage}
-            disabled={disabled || !prompt.trim()}
-            className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Generate Image
-          </button>
         </div>
       )}
 
       {/* Effects Tab */}
       {activeTab === 'effects' && (
-        <div className="space-y-6">
+        <div className="space-y-4 pt-4">
           {/* Generative Fill */}
-          <div className="space-y-2 p-4 bg-blue-50 rounded">
-            <h3 className="text-lg font-semibold text-gray-700">Generative Fill</h3>
+          <div className="space-y-3 p-4 bg-gradient-to-br from-blue-50 to-cyan-100 rounded-xl border border-blue-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-2xl">🎯</span> Generative Fill
+            </h3>
             <p className="text-sm text-gray-600">Use canvas to select area, then describe what to add</p>
             <input
               type="text"
@@ -268,7 +284,7 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
               onChange={(e) => setFillPrompt(e.target.value)}
               placeholder="What to generate in selected area..."
               disabled={disabled || !hasImage}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
             />
             <input
               type="text"
@@ -276,30 +292,34 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
               onChange={(e) => setFillNegativePrompt(e.target.value)}
               placeholder="What to avoid (optional)..."
               disabled={disabled || !hasImage}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
             />
             <button
               onClick={handleGenerateFill}
               disabled={disabled || !hasImage || !fillPrompt.trim()}
-              className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-lg hover:from-blue-600 hover:to-cyan-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
             >
               Apply Generative Fill
             </button>
           </div>
 
           {/* Style Transfer */}
-          <div className="space-y-2 p-4 bg-purple-50 rounded">
-            <h3 className="text-lg font-semibold text-gray-700">Style Transfer</h3>
+          <div className="space-y-3 p-4 bg-gradient-to-br from-purple-50 to-pink-100 rounded-xl border border-purple-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-2xl">🎨</span> Style Transfer
+            </h3>
             <input
               type="text"
               value={styleTransferPrompt}
               onChange={(e) => setStyleTransferPrompt(e.target.value)}
               placeholder="Describe the style (e.g., 'oil painting', 'cyberpunk')..."
               disabled={disabled || !hasImage}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm"
             />
-            <div className="space-y-1">
-              <label className="text-sm text-gray-600">Strength: {styleStrength.toFixed(2)}</label>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span>💪</span> Strength: <span className="text-purple-600">{styleStrength.toFixed(2)}</span>
+              </label>
               <input
                 type="range"
                 min="0"
@@ -308,34 +328,36 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
                 value={styleStrength}
                 onChange={(e) => setStyleStrength(Number(e.target.value))}
                 disabled={disabled || !hasImage}
-                className="w-full"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
               />
             </div>
             <button
               onClick={handleStyleTransfer}
               disabled={disabled || !hasImage || !styleTransferPrompt.trim()}
-              className="w-full px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
             >
               Apply Style Transfer
             </button>
           </div>
 
           {/* Text Effects */}
-          <div className="space-y-2 p-4 bg-pink-50 rounded">
-            <h3 className="text-lg font-semibold text-gray-700">Text Effects</h3>
+          <div className="space-y-3 p-4 bg-gradient-to-br from-pink-50 to-rose-100 rounded-xl border border-pink-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-2xl">✍️</span> Text Effects
+            </h3>
             <input
               type="text"
               value={textEffectText}
               onChange={(e) => setTextEffectText(e.target.value)}
               placeholder="Enter text..."
               disabled={disabled}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-3 border-2 border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent shadow-sm"
             />
             <select
               value={textEffectStyle}
               onChange={(e) => setTextEffectStyle(e.target.value)}
               disabled={disabled}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-3 border-2 border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent shadow-sm bg-white"
             >
               <option value="3d metallic">3D Metallic</option>
               <option value="neon glow">Neon Glow</option>
@@ -347,7 +369,7 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
             <button
               onClick={handleTextEffect}
               disabled={disabled || !textEffectText.trim()}
-              className="w-full px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg hover:from-pink-600 hover:to-rose-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
             >
               Generate Text Effect
             </button>
@@ -357,69 +379,74 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
 
       {/* Outpaint Tab */}
       {activeTab === 'outpaint' && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-700">Image Extension</h3>
-          <p className="text-sm text-gray-600">Extend your image borders with AI</p>
+        <div className="space-y-4 pt-4">
+          <div className="p-4 bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl border border-orange-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+              <span className="text-2xl">🖼️</span> Image Extension
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">Extend your image borders with AI</p>
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Direction</label>
-            <div className="grid grid-cols-3 gap-2">
-              {['left', 'right', 'top', 'bottom', 'all'].map((dir) => (
-                <button
-                  key={dir}
-                  onClick={() => setOutpaintDirection(dir)}
-                  disabled={disabled || !hasImage}
-                  className={`px-4 py-2 rounded transition-colors capitalize disabled:opacity-50 disabled:cursor-not-allowed ${
-                    outpaintDirection === dir
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {dir}
-                </button>
-              ))}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700">Direction</label>
+              <div className="grid grid-cols-3 gap-2">
+                {['left', 'right', 'top', 'bottom', 'all'].map((dir) => (
+                  <button
+                    key={dir}
+                    onClick={() => setOutpaintDirection(dir)}
+                    disabled={disabled || !hasImage}
+                    className={`px-4 py-2.5 rounded-lg transition-all duration-200 capitalize disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm hover:shadow-md ${
+                      outpaintDirection === dir
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                    }`}
+                  >
+                    {dir}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">
-              Expand Pixels: {outpaintPixels}
-            </label>
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span>📏</span> Expand Pixels: <span className="text-orange-600">{outpaintPixels}</span>
+              </label>
+              <input
+                type="range"
+                min="64"
+                max="512"
+                step="16"
+                value={outpaintPixels}
+                onChange={(e) => setOutpaintPixels(Number(e.target.value))}
+                disabled={disabled || !hasImage}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+              />
+            </div>
+
             <input
-              type="range"
-              min="64"
-              max="512"
-              step="16"
-              value={outpaintPixels}
-              onChange={(e) => setOutpaintPixels(Number(e.target.value))}
+              type="text"
+              value={outpaintPrompt}
+              onChange={(e) => setOutpaintPrompt(e.target.value)}
+              placeholder="Guide the extension (optional)..."
               disabled={disabled || !hasImage}
-              className="w-full"
+              className="w-full px-4 py-3 mt-4 border-2 border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
             />
+
+            <button
+              onClick={handleOutpaint}
+              disabled={disabled || !hasImage}
+              className="w-full px-4 py-3 mt-4 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-lg hover:from-orange-600 hover:to-amber-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
+            >
+              Extend Image
+            </button>
           </div>
-
-          <input
-            type="text"
-            value={outpaintPrompt}
-            onChange={(e) => setOutpaintPrompt(e.target.value)}
-            placeholder="Guide the extension (optional)..."
-            disabled={disabled || !hasImage}
-            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-
-          <button
-            onClick={handleOutpaint}
-            disabled={disabled || !hasImage}
-            className="w-full px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Extend Image
-          </button>
         </div>
       )}
 
       {/* AI Not Enabled Warning */}
       {!aiEnabled && activeTab !== 'basic' && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
-          <p className="text-sm text-yellow-800">
+        <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl shadow-sm">
+          <p className="text-sm text-yellow-900 font-medium flex items-center gap-2">
+            <span className="text-lg">⚠️</span>
             AI features are disabled. Set ENABLE_STABLE_DIFFUSION=true in backend .env to enable.
           </p>
         </div>

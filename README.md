@@ -1,6 +1,6 @@
 # AI Photo Editor 🎨✨
 
-A comprehensive AI-powered photo editing application with **Adobe Firefly-like features** that brings professional-grade image manipulation to your fingertips. Built with FastAPI, React, and cutting-edge machine learning models.
+A comprehensive AI-powered photo editing application with advanced AI features that brings professional-grade image manipulation to your fingertips. Built with FastAPI, React, and cutting-edge machine learning models.
 
 ![AI Photo Editor](https://img.shields.io/badge/AI-Photo%20Editor-blue)
 ![Python](https://img.shields.io/badge/Python-3.11-green)
@@ -38,7 +38,7 @@ A comprehensive AI-powered photo editing application with **Adobe Firefly-like f
 
 ## ✨ Features
 
-### Adobe Firefly-like AI Features
+### Advanced AI Features
 - ✨ **Generative Fill**: AI-powered object insertion and replacement in selected areas
 - 🖼️ **Image Extension (Outpainting)**: Extend image borders intelligently in any direction
 - 🎭 **Style Transfer**: Transform images with AI-powered style recoloring
@@ -148,7 +148,7 @@ npm run dev
 - `POST /apply-filter`: Apply filters to image
 - `POST /adjust-brightness`: Adjust image brightness
 
-### Adobe Firefly-like Endpoints
+### Advanced AI Endpoints
 - `POST /generative-fill`: AI-powered object insertion/replacement
 - `POST /outpaint`: Extend image borders with AI
 - `POST /text-effect`: Generate artistic text effects
@@ -169,7 +169,7 @@ HOST=0.0.0.0
 PORT=8000
 ALLOWED_ORIGINS=http://localhost:3000
 DEVICE=cpu  # or 'cuda' for GPU
-ENABLE_STABLE_DIFFUSION=true  # Set to 'true' to enable Adobe Firefly-like AI features
+ENABLE_STABLE_DIFFUSION=true  # Set to 'true' to enable advanced AI features
 MODEL_CACHE_DIR=./models
 ```
 
@@ -181,7 +181,7 @@ Create a `.env` file in the `frontend` directory:
 VITE_API_URL=http://localhost:8000
 ```
 
-## 🔧 Adobe Firefly-like Features
+## 🔧 Advanced AI Features
 
 ### Generative Fill
 AI-powered object insertion and replacement. Select an area with the canvas tool and describe what you want to generate.
@@ -212,7 +212,7 @@ Generate images with enhanced control:
 
 ### Enable AI Features
 
-To enable Adobe Firefly-like AI features:
+To enable advanced AI features:
 
 1. Set `ENABLE_STABLE_DIFFUSION=true` in `backend/.env`
 2. Ensure you have sufficient RAM (8GB+) or use GPU

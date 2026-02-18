@@ -1,6 +1,6 @@
 /**
  * API service for communicating with the backend.
- * Adobe Firefly-like features support.
+ * Advanced AI features support.
  */
 import axios from 'axios';
 
@@ -155,7 +155,7 @@ export const checkHealth = async (): Promise<HealthResponse> => {
   return response.data;
 };
 
-// Adobe Firefly-like Features
+// Advanced AI Features
 
 /**
  * Get available style presets and aspect ratios.
