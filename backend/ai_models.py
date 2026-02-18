@@ -311,7 +311,7 @@ class AIModelManager:
         """
         return list(self.loaded_models.keys())
 
-    # Adobe Firefly-like Features
+    # Advanced AI Features
 
     def generative_fill(
         self,
@@ -323,7 +323,7 @@ class AIModelManager:
         guidance_scale: float = 7.5
     ) -> Image.Image:
         """
-        Generative Fill: AI-powered object insertion/replacement (Adobe Firefly-like).
+        Generative Fill: AI-powered object insertion/replacement.
 
         Args:
             image: Original PIL Image
@@ -370,7 +370,7 @@ class AIModelManager:
         num_inference_steps: int = 50
     ) -> Image.Image:
         """
-        Image Extension/Outpainting: Extend image borders with AI (Adobe Firefly-like).
+        Image Extension/Outpainting: Extend image borders with AI.
 
         Args:
             image: Original PIL Image
@@ -478,7 +478,7 @@ class AIModelManager:
         num_inference_steps: int = 50
     ) -> Image.Image:
         """
-        Apply style transfer to an image (Adobe Firefly-like recolor/style).
+        Apply style transfer to an image.
 
         Args:
             image: Original PIL Image
@@ -520,7 +520,7 @@ class AIModelManager:
         num_inference_steps: int = 50
     ) -> Image.Image:
         """
-        Generate text with artistic effects (Adobe Firefly-like text effects).
+        Generate text with artistic effects.
 
         Args:
             text: The text to generate
@@ -554,7 +554,7 @@ class AIModelManager:
         style_preset: str = "none"
     ) -> str:
         """
-        Enhance prompt with style presets (Adobe Firefly-like).
+        Enhance prompt with style presets.
 
         Args:
             prompt: Base prompt
@@ -594,7 +594,7 @@ class AIModelManager:
         seed: Optional[int] = None
     ) -> Image.Image:
         """
-        Generate image with style presets (Adobe Firefly-like).
+        Generate image with style presets.
 
         Args:
             prompt: Text description

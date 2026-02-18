@@ -199,7 +199,7 @@ function App() {
         <header className="text-center text-white space-y-2">
           <h1 className="text-5xl font-bold">AI Photo Editor</h1>
           <p className="text-xl opacity-90">
-            Adobe Firefly-like AI photo editing • Professional image generation & manipulation
+            Professional AI-powered image generation & manipulation
           </p>
         </header>
 

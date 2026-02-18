@@ -66,7 +66,7 @@ async def root():
     return {
         "name": "AI Photo Editor API",
         "version": "2.0.0",
-        "description": "Adobe Firefly-like AI photo editing capabilities",
+        "description": "AI-powered photo editing with advanced image generation and manipulation",
         "endpoints": {
             "basic": {
                 "upload": "/upload",
@@ -75,7 +75,7 @@ async def root():
                 "apply_filter": "/apply-filter",
                 "adjust_brightness": "/adjust-brightness"
             },
-            "adobe_firefly_features": {
+            "ai_features": {
                 "generative_fill": "/generative-fill",
                 "outpaint": "/outpaint",
                 "text_effect": "/text-effect",
@@ -356,7 +356,7 @@ async def process_image(image_url: str):
     }
 
 
-# Adobe Firefly-like Features
+# Advanced AI Features
 
 @app.get("/style-presets")
 async def get_style_presets():
@@ -401,7 +401,7 @@ async def generative_fill(
     guidance_scale: float = Form(7.5)
 ):
     """
-    Generative Fill: AI-powered object insertion/replacement (Adobe Firefly-like).
+    Generative Fill: AI-powered object insertion/replacement.
 
     Args:
         image: Original image file
@@ -459,7 +459,7 @@ async def outpaint_image(
     num_inference_steps: int = Form(50)
 ):
     """
-    Image Extension/Outpainting: Extend image borders with AI (Adobe Firefly-like).
+    Image Extension/Outpainting: Extend image borders with AI.
 
     Args:
         image: Original image file
@@ -519,7 +519,7 @@ async def generate_text_effect(
     num_inference_steps: int = Form(50)
 ):
     """
-    Generate text with artistic effects (Adobe Firefly-like text effects).
+    Generate text with artistic effects.
 
     Args:
         text: The text to generate
@@ -571,7 +571,7 @@ async def apply_style_transfer(
     num_inference_steps: int = Form(50)
 ):
     """
-    Apply style transfer to an image (Adobe Firefly-like recolor/style).
+    Apply style transfer to an image.
 
     Args:
         image: Original image file
@@ -628,7 +628,7 @@ async def generate_with_style(
     seed: Optional[int] = Form(None)
 ):
     """
-    Generate image with style presets (Adobe Firefly-like).
+    Generate image with style presets.
     Enhanced version of text-to-image with style presets and aspect ratios.
 
     Args:
