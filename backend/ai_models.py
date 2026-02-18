@@ -2,7 +2,7 @@
 AI model integrations for advanced image generation and manipulation.
 Includes Stable Diffusion and other generative models.
 Supports multiple model versions for optimal results.
-Adobe Firefly-like features: Generative Fill, Outpainting, Style Transfer, etc.
+Advanced features: Generative Fill, Outpainting, Style Transfer, etc.
 """
 import os
 from typing import Optional, Dict, List, Tuple

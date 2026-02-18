@@ -155,7 +155,7 @@ export const checkHealth = async (): Promise<HealthResponse> => {
   return response.data;
 };
 
-// Adobe Firefly-like Features
+// Advanced AI Features
 
 /**
  * Get available style presets and aspect ratios.
