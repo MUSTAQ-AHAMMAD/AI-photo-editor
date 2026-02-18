@@ -3,7 +3,7 @@
 A comprehensive AI-powered photo editing application with advanced AI features that brings professional-grade image manipulation to your fingertips. Built with FastAPI, React, and cutting-edge machine learning models.
 
 ![AI Photo Editor](https://img.shields.io/badge/AI-Photo%20Editor-blue)
-![Python](https://img.shields.io/badge/Python-3.11-green)
+![Python](https://img.shields.io/badge/Python-3.12-green)
 ![React](https://img.shields.io/badge/React-18-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-teal)
 ![Tests](https://img.shields.io/badge/Tests-93%25%20Passing-brightgreen)
@@ -61,7 +61,7 @@ A comprehensive AI-powered photo editing application with advanced AI features t
 ### Prerequisites
 
 - Docker and Docker Compose (recommended)
-- OR Python 3.11+ and Node.js 20+ (for local development)
+- OR Python 3.12+ and Node.js 20+ (for local development)
 
 ### Option 1: Docker (Recommended)
 
