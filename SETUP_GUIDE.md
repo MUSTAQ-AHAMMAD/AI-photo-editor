@@ -24,7 +24,7 @@ This guide provides detailed instructions for setting up and running the AI Phot
 ### Software Requirements
 - Docker 20.10+ and Docker Compose 2.0+ (for Docker setup)
 - OR:
-  - Python 3.11+
+  - Python 3.12+ (3.12.3 tested and recommended)
   - Node.js 20+
   - npm or yarn
 
@@ -106,9 +106,9 @@ For development or if you prefer not to use Docker.
 
 #### Backend Setup
 
-1. **Install Python 3.11+**
+1. **Install Python 3.12+**
    ```bash
-   python --version  # Should be 3.11 or higher
+   python --version  # Should be 3.12 or higher
    ```
 
 2. **Create Virtual Environment**
