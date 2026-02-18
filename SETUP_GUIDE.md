@@ -330,6 +330,51 @@ pip install rembg[cpu]  # For CPU
 - Increase Docker memory limit
 - Use smaller batch sizes
 
+#### 7. NumPy/SciPy Build Errors on Windows (Python 3.13+)
+
+**Error:** `Preparing metadata (pyproject.toml) ... error` or Meson build system errors when installing NumPy
+
+**Symptoms:**
+- `subprocess-exited-with-error` during pip install
+- `\Microsoft was unexpected at this time`
+- `CalledProcessError` from Meson build system
+- Errors related to Visual Studio environment setup
+
+**Root Cause:** 
+When using Python 3.13 on Windows, some older package versions don't have pre-built binary wheels and pip attempts to build from source, which can fail due to missing build tools or path issues.
+
+**Solution:**
+
+**Option 1: Use Python 3.12 (Recommended)**
+```bash
+# Download and install Python 3.12.x from python.org
+# Then create a new virtual environment
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+**Option 2: Let pip auto-select compatible versions**
+The `requirements.txt` now uses version ranges (`numpy>=1.26.4,<3.0.0`) which allows pip to automatically select the best available version with pre-built wheels for your Python version.
+
+```bash
+# This should work automatically on Python 3.13
+pip install -r requirements.txt
+```
+
+**Option 3: Install Microsoft Visual C++ Build Tools (if you need to build from source)**
+```bash
+# Download and install from:
+# https://visualstudio.microsoft.com/visual-cpp-build-tools/
+# Then retry installation
+pip install -r requirements.txt
+```
+
+**Prevention:**
+- Use Python 3.12.x for maximum compatibility (recommended)
+- Ensure pip is up-to-date: `python -m pip install --upgrade pip`
+- Use virtual environments to avoid conflicts
+
 ### Enable GPU Support
 
 #### 1. Install CUDA
