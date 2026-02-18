@@ -69,3 +69,5 @@ logs/
 .coverage
 htmlcov/
 .pytest_cache/
+backend/test_results/
+!docs/test_results/

@@ -33,7 +33,7 @@ class VisualDocGenerator:
     async def setup(self):
         """Setup browser and page."""
         playwright = await async_playwright().start()
-        self.browser = await playwright.chromium.launch(headless=False)
+        self.browser = await playwright.chromium.launch(headless=True)
         self.page = await self.browser.new_page(viewport={'width': 1920, 'height': 1080})
         print(f"✓ Browser launched")
 
