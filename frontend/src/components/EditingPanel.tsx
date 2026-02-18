@@ -120,22 +120,70 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
         Advanced AI Tools
       </h2>
 
+      {/* AI Status Warning - Show at top if AI is disabled */}
+      {!aiEnabled && (
+        <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-400 rounded-xl shadow-md">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">⚠️</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-yellow-900 mb-1">
+                AI Features Currently Disabled
+              </p>
+              <p className="text-xs text-yellow-800 mb-2">
+                Advanced AI tools (Generate, Effects, Extend) require Stable Diffusion to be enabled.
+              </p>
+              <div className="text-xs text-yellow-900 bg-yellow-100 p-2 rounded border border-yellow-300">
+                <p className="font-semibold mb-1">To enable AI features:</p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Copy <code className="bg-yellow-200 px-1 rounded">backend/.env.example</code> to <code className="bg-yellow-200 px-1 rounded">backend/.env</code></li>
+                  <li>Set <code className="bg-yellow-200 px-1 rounded">ENABLE_STABLE_DIFFUSION=true</code> in the .env file</li>
+                  <li>Restart the backend server</li>
+                </ol>
+                <p className="mt-2 text-yellow-700">
+                  Note: First run will download ~4GB of AI models. Requires 8GB+ RAM.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tab Navigation */}
       <div className="flex space-x-2 border-b border-gray-200 pb-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            disabled={tab.requiresAI && !aiEnabled}
-            className={`px-5 py-2.5 font-semibold rounded-t-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed ${
-              activeTab === tab.id
-                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md transform -translate-y-0.5'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-          >
-            {tab.icon} {tab.name}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const isDisabled = tab.requiresAI && !aiEnabled;
+          return (
+            <div key={tab.id} className="relative group">
+              <button
+                onClick={() => setActiveTab(tab.id)}
+                disabled={isDisabled}
+                aria-describedby={isDisabled ? `tooltip-${tab.id}` : undefined}
+                aria-label={isDisabled ? `${tab.name} (locked - AI features required)` : tab.name}
+                className={`px-5 py-2.5 font-semibold rounded-t-lg transition-all duration-200 ${
+                  isDisabled
+                    ? 'opacity-40 cursor-not-allowed bg-gray-200 text-gray-500'
+                    : activeTab === tab.id
+                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md transform -translate-y-0.5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {tab.icon} {tab.name}
+                {isDisabled && <span className="ml-1 text-xs" aria-hidden="true">🔒</span>}
+              </button>
+              {/* Tooltip for disabled tabs */}
+              {isDisabled && (
+                <div 
+                  id={`tooltip-${tab.id}`}
+                  role="tooltip"
+                  className="absolute hidden group-hover:block group-focus-within:block z-10 w-64 p-2 mt-1 text-xs text-white bg-gray-900 rounded shadow-lg -left-20 pointer-events-none"
+                >
+                  <p className="font-semibold mb-1">🔒 AI Feature Locked</p>
+                  <p>Enable Stable Diffusion in backend settings to unlock this feature.</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Basic Tab */}
@@ -439,16 +487,6 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
               Extend Image
             </button>
           </div>
-        </div>
-      )}
-
-      {/* AI Not Enabled Warning */}
-      {!aiEnabled && activeTab !== 'basic' && (
-        <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl shadow-sm">
-          <p className="text-sm text-yellow-900 font-medium flex items-center gap-2">
-            <span className="text-lg">⚠️</span>
-            AI features are disabled. Set ENABLE_STABLE_DIFFUSION=true in backend .env to enable.
-          </p>
         </div>
       )}
     </div>

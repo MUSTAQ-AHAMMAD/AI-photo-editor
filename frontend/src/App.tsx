@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ImageUpload from './components/ImageUpload';
 import ImageCanvas from './components/ImageCanvas';
 import ImagePreview from './components/ImagePreview';
@@ -105,7 +105,7 @@ function App() {
     }
   };
 
-  const handleGenerateFill = async (prompt: string, negativePrompt: string) => {
+  const handleGenerateFill = async (_prompt: string, _negativePrompt: string) => {
     if (!currentFile) return;
 
     setIsProcessing(true);
