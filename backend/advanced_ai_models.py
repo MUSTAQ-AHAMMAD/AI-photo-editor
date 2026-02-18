@@ -3,7 +3,7 @@ Advanced AI model integrations including ControlNet, SDXL, and other state-of-th
 Provides cutting-edge image generation and manipulation capabilities.
 """
 import os
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any
 import torch
 import numpy as np
 from PIL import Image
@@ -113,7 +113,7 @@ class AdvancedAIModelManager:
         self.sdxl_pipeline = None
         self.sdxl_refiner = None
         self.sdxl_img2img = None
-        self.loaded_models: Dict[str, any] = {}
+        self.loaded_models: Dict[str, Any] = {}
         
         # Initialize preprocessors
         self.preprocessors = {}
