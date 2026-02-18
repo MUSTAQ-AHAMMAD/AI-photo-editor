@@ -7,7 +7,7 @@ torch==2.6.0
 torchvision==0.21.0
 transformers==4.48.0
 diffusers==0.21.4
-rembg==2.0.60
+rembg==2.0.72
 numpy==1.26.0
 scipy==1.11.4
 aiofiles==23.2.1
