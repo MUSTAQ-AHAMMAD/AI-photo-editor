@@ -8,7 +8,7 @@ requests==2.31.0
 playwright==1.44.0
 
 # Image processing for test data
-Pillow==11.1.0
+Pillow==12.1.1
 
 # Progress bars
 tqdm==4.66.1
