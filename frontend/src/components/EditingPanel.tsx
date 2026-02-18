@@ -175,7 +175,7 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
                 <div 
                   id={`tooltip-${tab.id}`}
                   role="tooltip"
-                  className="absolute hidden group-hover:block z-10 w-64 p-2 mt-1 text-xs text-white bg-gray-900 rounded shadow-lg -left-20"
+                  className="absolute hidden group-hover:block group-focus-within:block z-10 w-64 p-2 mt-1 text-xs text-white bg-gray-900 rounded shadow-lg -left-20 pointer-events-none"
                 >
                   <p className="font-semibold mb-1">🔒 AI Feature Locked</p>
                   <p>Enable Stable Diffusion in backend settings to unlock this feature.</p>
