@@ -1,12 +1,48 @@
 # AI Photo Editor 🎨✨
 
-A comprehensive AI-powered photo editing application with advanced AI features that brings professional-grade image manipulation to your fingertips. Built with FastAPI, React, and cutting-edge machine learning models.
+A comprehensive AI-powered photo editing application with **Google Gemini Pro**, **ControlNet**, **SDXL**, and advanced AI features that brings professional-grade image manipulation to your fingertips. Built with FastAPI, React, and cutting-edge machine learning models.
 
 ![AI Photo Editor](https://img.shields.io/badge/AI-Photo%20Editor-blue)
 ![Python](https://img.shields.io/badge/Python-3.12-green)
 ![React](https://img.shields.io/badge/React-18-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-teal)
+![Gemini Pro](https://img.shields.io/badge/Gemini-Pro-orange)
 ![Tests](https://img.shields.io/badge/Tests-93%25%20Passing-brightgreen)
+
+---
+
+## 🤖 Advanced AI Integration
+
+This project now includes **state-of-the-art AI libraries** for superior image generation and analysis:
+
+### 🌟 Google Gemini Pro AI
+- **Gemini Vision Pro**: Advanced image understanding and analysis
+- **Intelligent Image Captions**: Generate creative and descriptive captions
+- **Smart Prompt Enhancement**: AI-powered prompt optimization for better generation
+- **Object Detection**: Identify and list objects in images
+- **Color Palette Analysis**: Intelligent color scheme suggestions
+- **Edit Recommendations**: AI-suggested improvements for your photos
+
+### 🎯 ControlNet Integration
+- **Canny Edge Detection**: Precise structure control with edge detection
+- **Depth Maps**: 3D-aware generation with depth understanding
+- **OpenPose**: Human pose detection and control
+- **Line Detection (MLSD)**: Perfect for architectural images
+- **HED (Holistically-Nested Edge Detection)**: Advanced edge detection
+- **Multiple Control Modes**: Scribble, sketch, segmentation, and more
+
+### 💎 Stable Diffusion XL (SDXL)
+- **Highest Quality Generation**: SDXL base model for superior image quality
+- **SDXL Refiner**: Optional refiner for enhanced detail
+- **1024x1024 Resolution**: High-resolution image generation
+- **Advanced Img2Img**: Transform images with SDXL quality
+
+### 🔧 Additional Advanced Libraries
+- **Accelerate**: Optimized model loading and inference
+- **SafeTensors**: Secure and fast model storage
+- **ControlNet-Aux**: Comprehensive preprocessors library
+- **Timm**: State-of-the-art image models
+- **Einops**: Tensor operations for advanced processing
 
 ---
 
@@ -37,6 +73,29 @@ A comprehensive AI-powered photo editing application with advanced AI features t
 ---
 
 ## ✨ Features
+
+### 🤖 Gemini Pro AI Features (NEW!)
+- 🔍 **Intelligent Image Analysis**: Detailed, artistic, or technical analysis of images
+- 📝 **Smart Captions**: Generate descriptive, creative, or social media captions
+- ✨ **Prompt Enhancement**: Automatically improve prompts for better AI generation
+- 🎯 **Edit Suggestions**: AI-powered recommendations for image improvements
+- 🎨 **Color Palette Analysis**: Intelligent color scheme extraction and suggestions
+- 🔎 **Object Detection**: Identify and list all objects in images
+- ⚫ **Negative Prompt Generation**: Smart negative prompts for quality improvements
+
+### 🎯 ControlNet Features (NEW!)
+- 🖼️ **Canny Edge Control**: Generate images following edge structure
+- 📐 **Depth-Aware Generation**: 3D structure-aware image creation
+- 🚶 **Pose Control**: Human pose-guided generation with OpenPose
+- 🏛️ **Line Detection**: Architectural image generation with MLSD
+- 🎨 **Multiple Control Modes**: HED, scribble, segmentation, and more
+- 🔧 **Auto-Preprocessing**: Automatic control image preparation
+
+### 💎 SDXL Features (NEW!)
+- 🌟 **Ultra-High Quality**: Generate 1024x1024 images with SDXL
+- ✨ **Refiner Support**: Optional refiner for enhanced details
+- 🎭 **Advanced Transformations**: High-quality img2img with SDXL
+- 🚀 **Optimized Performance**: Memory-efficient with attention slicing
 
 ### Advanced AI Features
 - ✨ **Generative Fill**: AI-powered object insertion and replacement in selected areas
@@ -170,9 +229,31 @@ HOST=0.0.0.0
 PORT=8000
 ALLOWED_ORIGINS=http://localhost:3000
 DEVICE=cpu  # or 'cuda' for GPU
-ENABLE_STABLE_DIFFUSION=true  # Set to 'true' to enable advanced AI features
+
+# AI Model Settings
+ENABLE_STABLE_DIFFUSION=true  # Enable Stable Diffusion features
+ENABLE_GEMINI=true  # Enable Google Gemini Pro features
+ENABLE_CONTROLNET=true  # Enable ControlNet features
+ENABLE_SDXL=true  # Enable SDXL features
 MODEL_CACHE_DIR=./models
+
+# API Keys
+GEMINI_API_KEY=your_gemini_api_key_here  # Get from https://makersuite.google.com/app/apikey
+HUGGINGFACE_TOKEN=your_token_here  # Optional, for private models
 ```
+
+### Getting API Keys
+
+#### Google Gemini API Key (Required for Gemini features)
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Get API Key" or "Create API Key"
+4. Copy your API key and add it to `.env` as `GEMINI_API_KEY`
+
+#### HuggingFace Token (Optional)
+1. Visit [HuggingFace Settings](https://huggingface.co/settings/tokens)
+2. Create a new token with "read" access
+3. Add to `.env` as `HUGGINGFACE_TOKEN`
 
 ### Frontend Environment Variables
 
@@ -183,6 +264,66 @@ VITE_API_URL=http://localhost:8000
 ```
 
 ## 🔧 Advanced AI Features
+
+### 🤖 Gemini Pro Features
+
+#### Image Analysis
+Analyze images with different depths:
+- **Detailed**: Comprehensive analysis with composition, colors, style, and improvement suggestions
+- **Simple**: Quick 2-3 sentence description
+- **Artistic**: Focus on artistic elements and style
+- **Technical**: Technical assessment of quality and exposure
+
+**API Endpoint**: `POST /analyze-image`
+
+#### Smart Captions
+Generate captions in different styles:
+- **Descriptive**: Clear, informative captions
+- **Creative**: Engaging social media captions
+- **Technical**: Technical descriptions
+- **Social**: Social media ready with hashtags
+
+**API Endpoint**: `POST /generate-caption`
+
+#### Prompt Enhancement
+Automatically enhance prompts for better AI generation results. Gemini analyzes your prompt and adds relevant details, quality tags, and artistic specifications.
+
+**API Endpoint**: `POST /enhance-prompt`
+
+#### Edit Suggestions
+Get AI-powered recommendations for improving your images including color adjustments, composition improvements, and style enhancements.
+
+**API Endpoint**: `POST /suggest-edits`
+
+### 🎯 ControlNet Features
+
+Generate images with precise structure control using various control modes:
+
+- **Canny**: Edge detection for precise structure control
+- **Depth**: 3D depth-aware generation
+- **OpenPose**: Human pose control
+- **MLSD**: Line detection for architecture
+- **HED**: Holistically-nested edge detection
+- **Scribble**: Sketch-based generation
+
+**API Endpoint**: `POST /generate-with-controlnet`
+
+### 💎 SDXL Features
+
+#### High-Quality Generation
+Generate images at 1024x1024 resolution with superior quality:
+
+**API Endpoint**: `POST /generate-with-sdxl`
+
+Parameters:
+- `width`, `height`: Output dimensions (recommended 1024x1024)
+- `use_refiner`: Enable SDXL refiner for enhanced detail
+- `refiner_steps`: Number of refiner steps (default: 50)
+
+#### Advanced Transformations
+Transform images with SDXL quality:
+
+**API Endpoint**: `POST /transform-with-sdxl`
 
 ### Generative Fill
 AI-powered object insertion and replacement. Select an area with the canvas tool and describe what you want to generate.
