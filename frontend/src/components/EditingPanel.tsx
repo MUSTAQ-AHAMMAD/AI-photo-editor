@@ -135,8 +135,8 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
               <div className="text-xs text-yellow-900 bg-yellow-100 p-2 rounded border border-yellow-300">
                 <p className="font-semibold mb-1">To enable AI features:</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>Create <code className="bg-yellow-200 px-1 rounded">backend/.env</code> file from <code className="bg-yellow-200 px-1 rounded">.env.example</code></li>
-                  <li>Set <code className="bg-yellow-200 px-1 rounded">ENABLE_STABLE_DIFFUSION=true</code></li>
+                  <li>Copy <code className="bg-yellow-200 px-1 rounded">backend/.env.example</code> to <code className="bg-yellow-200 px-1 rounded">backend/.env</code></li>
+                  <li>Set <code className="bg-yellow-200 px-1 rounded">ENABLE_STABLE_DIFFUSION=true</code> in the .env file</li>
                   <li>Restart the backend server</li>
                 </ol>
                 <p className="mt-2 text-yellow-700">
@@ -157,6 +157,8 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
               <button
                 onClick={() => setActiveTab(tab.id)}
                 disabled={isDisabled}
+                aria-describedby={isDisabled ? `tooltip-${tab.id}` : undefined}
+                aria-label={isDisabled ? `${tab.name} (locked - AI features required)` : tab.name}
                 className={`px-5 py-2.5 font-semibold rounded-t-lg transition-all duration-200 ${
                   isDisabled
                     ? 'opacity-40 cursor-not-allowed bg-gray-200 text-gray-500'
@@ -166,11 +168,15 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
                 }`}
               >
                 {tab.icon} {tab.name}
-                {isDisabled && <span className="ml-1 text-xs">🔒</span>}
+                {isDisabled && <span className="ml-1 text-xs" aria-hidden="true">🔒</span>}
               </button>
               {/* Tooltip for disabled tabs */}
               {isDisabled && (
-                <div className="absolute hidden group-hover:block z-10 w-64 p-2 mt-1 text-xs text-white bg-gray-900 rounded shadow-lg -left-20">
+                <div 
+                  id={`tooltip-${tab.id}`}
+                  role="tooltip"
+                  className="absolute hidden group-hover:block z-10 w-64 p-2 mt-1 text-xs text-white bg-gray-900 rounded shadow-lg -left-20"
+                >
                   <p className="font-semibold mb-1">🔒 AI Feature Locked</p>
                   <p>Enable Stable Diffusion in backend settings to unlock this feature.</p>
                 </div>
