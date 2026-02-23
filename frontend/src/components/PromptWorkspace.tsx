@@ -1,24 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Wand2, ChevronDown, ChevronUp, Sparkles,
-  SlidersHorizontal, Loader2,
-} from 'lucide-react';
-import * as api from '../services/api';
+import { ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import type { AIEngine, StylePreset, AspectRatio } from '../services/api';
-import type { MultiEngineGenerationResult } from './MultiEngineGenerationPanel';
+import { useAppStore } from '../store';
 
 const STYLE_ICONS: Record<string, string> = {
   none: '✦', photorealistic: '📷', anime: '🎌', 'digital-art': '🖥️',
   watercolor: '🎨', oil_painting: '🖼️', sketch: '✏️', cyberpunk: '⚡',
   fantasy: '🔮', minimalist: '⬜',
 };
-
-interface PromptWorkspaceProps {
-  onResult: (result: MultiEngineGenerationResult) => void;
-  isGenerating: boolean;
-  setIsGenerating: (v: boolean) => void;
-}
 
 const LIGHTING_OPTIONS = [
   { id: 'natural', name: 'Natural' }, { id: 'golden_hour', name: 'Golden Hour' },
@@ -33,141 +23,79 @@ const CAMERA_OPTIONS = [
   { id: 'portrait', name: 'Portrait' }, { id: 'cinematic', name: 'Cinematic' },
 ];
 
-const PromptWorkspace: React.FC<PromptWorkspaceProps> = ({ onResult, isGenerating, setIsGenerating }) => {
-  const [engines, setEngines] = useState<AIEngine[]>([]);
-  const [selectedEngine, setSelectedEngine] = useState('placeholder');
-  const [prompt, setPrompt] = useState('');
-  const [negativePrompt, setNegativePrompt] = useState('');
-  const [stylePreset, setStylePreset] = useState('none');
-  const [aspectRatio, setAspectRatio] = useState('1:1');
-  const [lighting, setLighting] = useState('natural');
-  const [cameraAngle, setCameraAngle] = useState('eye level');
-  const [guidanceScale, setGuidanceScale] = useState(7.5);
-  const [seed, setSeed] = useState('');
-  const [outputFormat, setOutputFormat] = useState<'png' | 'jpeg' | 'webp'>('png');
-  const [stylePresets, setStylePresets] = useState<StylePreset[]>([]);
-  const [aspectRatios, setAspectRatios] = useState<AspectRatio[]>([]);
+const DEFAULT_PRESETS: StylePreset[] = [
+  { id: 'none', name: 'None', description: '' },
+  { id: 'photorealistic', name: 'Photorealistic', description: '' },
+  { id: 'anime', name: 'Anime', description: '' },
+  { id: 'digital-art', name: 'Digital Art', description: '' },
+  { id: 'watercolor', name: 'Watercolor', description: '' },
+  { id: 'cyberpunk', name: 'Cyberpunk', description: '' },
+  { id: 'fantasy', name: 'Fantasy', description: '' },
+  { id: 'minimalist', name: 'Minimalist', description: '' },
+];
+
+const DEFAULT_RATIOS: AspectRatio[] = [
+  { id: '1:1', name: 'Square', width: 1024, height: 1024 },
+  { id: '16:9', name: 'Wide', width: 1792, height: 1024 },
+  { id: '9:16', name: 'Portrait', width: 1024, height: 1792 },
+  { id: '4:3', name: 'Landscape', width: 1365, height: 1024 },
+];
+
+interface PromptWorkspaceProps {
+  engines: AIEngine[];
+  stylePresets: StylePreset[];
+  aspectRatios: AspectRatio[];
+}
+
+const PromptWorkspace: React.FC<PromptWorkspaceProps> = ({ engines, stylePresets, aspectRatios }) => {
+  const {
+    genEngineId, genStylePreset, genAspectRatio, genLighting, genCameraAngle,
+    genGuidanceScale, genSeed, genNegativePrompt, setGenSettings,
+  } = useAppStore();
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [error, setError] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    api.getEngines().then((d) => {
-      setEngines(d.engines);
-      const first = d.engines.find((e) => e.available);
-      if (first) setSelectedEngine(first.id);
-    }).catch(() => {});
-    api.getStylePresets().then((d) => {
-      setStylePresets(d.style_presets);
-      setAspectRatios(d.aspect_ratios);
-    }).catch(() => {});
-  }, []);
-
-  const resolveSize = () => {
-    const r = aspectRatios.find((r) => r.id === aspectRatio);
-    return { width: r?.width ?? 1024, height: r?.height ?? 1024 };
-  };
-
-  const handleGenerate = async () => {
-    if (!prompt.trim() || isGenerating) return;
-    setIsGenerating(true);
-    setError('');
-    try {
-      const { width, height } = resolveSize();
-      const parsedSeed = seed ? parseInt(seed, 10) : undefined;
-      const result = await api.generateMultiEngine({
-        prompt, engine_id: selectedEngine,
-        negative_prompt: negativePrompt || undefined,
-        width, height, aspect_ratio: aspectRatio,
-        style_preset: stylePreset, lighting, camera_angle: cameraAngle,
-        guidance_scale: guidanceScale,
-        seed: parsedSeed && !isNaN(parsedSeed) ? parsedSeed : undefined,
-        output_format: outputFormat,
-      });
-      onResult({ ...result, prompt, outputFormat });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Generation failed');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate();
-  };
-
-  const displayPresets = stylePresets.length > 0 ? stylePresets : [
-    { id: 'none', name: 'None', description: '' },
-    { id: 'photorealistic', name: 'Photorealistic', description: '' },
-    { id: 'anime', name: 'Anime', description: '' },
-    { id: 'digital-art', name: 'Digital Art', description: '' },
-    { id: 'watercolor', name: 'Watercolor', description: '' },
-    { id: 'cyberpunk', name: 'Cyberpunk', description: '' },
-  ];
-
-  const displayRatios = aspectRatios.length > 0 ? aspectRatios : [
-    { id: '1:1', name: 'Square', width: 1024, height: 1024 },
-    { id: '16:9', name: 'Widescreen', width: 1792, height: 1024 },
-    { id: '9:16', name: 'Portrait', width: 1024, height: 1792 },
-    { id: '4:3', name: 'Landscape', width: 1365, height: 1024 },
-  ];
+  const displayPresets = stylePresets.length > 0 ? stylePresets : DEFAULT_PRESETS;
+  const displayRatios = aspectRatios.length > 0 ? aspectRatios : DEFAULT_RATIOS;
 
   return (
-    <div className="space-y-4">
-      {/* Engine Selector */}
-      <div className="flex gap-2 flex-wrap">
-        {engines.length > 0 ? engines.map((engine) => (
-          <button
-            key={engine.id}
-            onClick={() => setSelectedEngine(engine.id)}
-            disabled={!engine.available}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border ${
-              selectedEngine === engine.id
-                ? 'bg-accent-purple border-accent-purple text-white'
-                : 'bg-transparent border-white/10 text-zinc-400 hover:border-white/20 hover:text-white'
-            } ${!engine.available ? 'opacity-40 cursor-not-allowed' : ''}`}
-          >
-            {engine.name}
-          </button>
-        )) : (
-          <div className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-accent-purple bg-accent-purple/20 text-accent-purple">
-            AI Engine
-          </div>
-        )}
-      </div>
-
-      {/* Main Prompt Input */}
-      <div className="relative">
-        <textarea
-          ref={textareaRef}
-          rows={4}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Describe the image you want to create... (⌘+Enter to generate)"
-          disabled={isGenerating}
-          className="w-full px-4 py-3 input-dark text-sm resize-none pr-12"
-        />
-        <button
-          className="absolute right-3 top-3 p-1.5 rounded-lg text-zinc-500 opacity-50 cursor-not-allowed"
-          title="AI Enhance Prompt (coming soon)"
-          disabled
-          aria-label="AI Enhance Prompt (coming soon)"
-        >
-          <Wand2 size={16} />
-        </button>
+    <div className="space-y-5">
+      {/* AI Engine */}
+      <div>
+        <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">AI Engine</p>
+        <div className="flex flex-col gap-1.5">
+          {engines.length > 0 ? engines.map((engine) => (
+            <button
+              key={engine.id}
+              onClick={() => setGenSettings({ genEngineId: engine.id })}
+              disabled={!engine.available}
+              title={engine.description}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border text-left ${
+                genEngineId === engine.id
+                  ? 'bg-accent-purple border-accent-purple text-white'
+                  : 'bg-transparent border-white/10 text-zinc-400 hover:border-white/20 hover:text-white'
+              } ${!engine.available ? 'opacity-40 cursor-not-allowed' : ''}`}
+            >
+              {engine.name}
+              {!engine.available && <span className="ml-1 opacity-60">(no key)</span>}
+            </button>
+          )) : (
+            <div className="px-3 py-2 rounded-xl text-xs font-semibold border border-accent-purple bg-accent-purple/20 text-accent-purple">
+              Demo Engine
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Style Presets */}
       <div>
-        <p className="text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Style Preset</p>
-        <div className="flex gap-2 flex-wrap">
-          {displayPresets.slice(0, 6).map((preset) => (
+        <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">Style</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {displayPresets.slice(0, 8).map((preset) => (
             <button
               key={preset.id}
-              onClick={() => setStylePreset(preset.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 border ${
-                stylePreset === preset.id
+              onClick={() => setGenSettings({ genStylePreset: preset.id })}
+              className={`px-2.5 py-2 rounded-xl text-xs font-medium transition-all duration-200 border text-left ${
+                genStylePreset === preset.id
                   ? 'bg-accent-purple/20 border-accent-purple text-accent-purple'
                   : 'bg-white/[0.03] border-white/10 text-zinc-400 hover:border-white/20 hover:text-white'
               }`}
@@ -180,19 +108,20 @@ const PromptWorkspace: React.FC<PromptWorkspaceProps> = ({ onResult, isGeneratin
 
       {/* Aspect Ratio */}
       <div>
-        <p className="text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Aspect Ratio</p>
-        <div className="flex gap-2">
+        <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">Aspect Ratio</p>
+        <div className="grid grid-cols-2 gap-1.5">
           {displayRatios.map((r) => (
             <button
               key={r.id}
-              onClick={() => setAspectRatio(r.id)}
-              className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all duration-200 border ${
-                aspectRatio === r.id
+              onClick={() => setGenSettings({ genAspectRatio: r.id })}
+              className={`py-2.5 rounded-xl text-xs font-medium transition-all duration-200 border flex flex-col items-center ${
+                genAspectRatio === r.id
                   ? 'bg-accent-purple/20 border-accent-purple text-accent-purple'
                   : 'bg-white/[0.03] border-white/10 text-zinc-400 hover:border-white/20 hover:text-white'
               }`}
             >
-              {r.id}
+              <span className="font-semibold">{r.id}</span>
+              <span className="text-[10px] opacity-60 mt-0.5">{r.name}</span>
             </button>
           ))}
         </div>
@@ -201,11 +130,11 @@ const PromptWorkspace: React.FC<PromptWorkspaceProps> = ({ onResult, isGeneratin
       {/* Advanced Settings Toggle */}
       <button
         onClick={() => setShowAdvanced((v) => !v)}
-        className="flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-white transition-colors"
+        className="flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-white transition-colors w-full"
       >
-        <SlidersHorizontal size={14} />
-        Advanced Settings
-        {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        <SlidersHorizontal size={13} />
+        Advanced
+        {showAdvanced ? <ChevronUp size={13} className="ml-auto" /> : <ChevronDown size={13} className="ml-auto" />}
       </button>
 
       <AnimatePresence>
@@ -214,129 +143,75 @@ const PromptWorkspace: React.FC<PromptWorkspaceProps> = ({ onResult, isGeneratin
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.22 }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+            <div className="space-y-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
               {/* Negative Prompt */}
               <div>
-                <label className="text-xs font-semibold text-zinc-400 block mb-1">Negative Prompt</label>
+                <label className="text-[11px] font-semibold text-zinc-400 block mb-1">Negative Prompt</label>
                 <input
                   type="text"
-                  value={negativePrompt}
-                  onChange={(e) => setNegativePrompt(e.target.value)}
+                  value={genNegativePrompt}
+                  onChange={(e) => setGenSettings({ genNegativePrompt: e.target.value })}
                   placeholder="What to avoid..."
-                  disabled={isGenerating}
-                  className="w-full px-3 py-2 input-dark text-sm"
+                  className="w-full px-3 py-2 input-dark text-xs"
                 />
               </div>
 
-              {/* Lighting + Camera */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-zinc-400 block mb-1">Lighting</label>
-                  <select
-                    value={lighting}
-                    onChange={(e) => setLighting(e.target.value)}
-                    disabled={isGenerating}
-                    className="w-full px-3 py-2 select-dark text-sm"
-                  >
-                    {LIGHTING_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-zinc-400 block mb-1">Camera</label>
-                  <select
-                    value={cameraAngle}
-                    onChange={(e) => setCameraAngle(e.target.value)}
-                    disabled={isGenerating}
-                    className="w-full px-3 py-2 select-dark text-sm"
-                  >
-                    {CAMERA_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
-                </div>
+              {/* Lighting */}
+              <div>
+                <label className="text-[11px] font-semibold text-zinc-400 block mb-1">Lighting</label>
+                <select
+                  value={genLighting}
+                  onChange={(e) => setGenSettings({ genLighting: e.target.value })}
+                  className="w-full px-3 py-2 select-dark text-xs"
+                >
+                  {LIGHTING_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+
+              {/* Camera Angle */}
+              <div>
+                <label className="text-[11px] font-semibold text-zinc-400 block mb-1">Camera Angle</label>
+                <select
+                  value={genCameraAngle}
+                  onChange={(e) => setGenSettings({ genCameraAngle: e.target.value })}
+                  className="w-full px-3 py-2 select-dark text-xs"
+                >
+                  {CAMERA_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
               </div>
 
               {/* Guidance Scale */}
               <div>
-                <label className="text-xs font-semibold text-zinc-400 block mb-1">
-                  Guidance Scale: <span className="text-accent-purple">{guidanceScale.toFixed(1)}</span>
+                <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
+                  Guidance Scale: <span className="text-accent-purple">{genGuidanceScale.toFixed(1)}</span>
                 </label>
                 <input
                   type="range" min="1" max="15" step="0.5"
-                  value={guidanceScale}
-                  onChange={(e) => setGuidanceScale(Number(e.target.value))}
-                  disabled={isGenerating}
+                  value={genGuidanceScale}
+                  onChange={(e) => setGenSettings({ genGuidanceScale: Number(e.target.value) })}
                   className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#6C5CE7]"
-                  style={{ background: `linear-gradient(to right, #6C5CE7 ${((guidanceScale-1)/14)*100}%, rgba(255,255,255,0.1) ${((guidanceScale-1)/14)*100}%)` }}
+                  style={{ background: `linear-gradient(to right, #6C5CE7 ${((genGuidanceScale - 1) / 14) * 100}%, rgba(255,255,255,0.1) ${((genGuidanceScale - 1) / 14) * 100}%)` }}
                 />
               </div>
 
               {/* Seed */}
               <div>
-                <label className="text-xs font-semibold text-zinc-400 block mb-1">Seed (optional)</label>
+                <label className="text-[11px] font-semibold text-zinc-400 block mb-1">Seed (optional)</label>
                 <input
                   type="number"
-                  value={seed}
-                  onChange={(e) => setSeed(e.target.value)}
+                  value={genSeed}
+                  onChange={(e) => setGenSettings({ genSeed: e.target.value })}
                   placeholder="Random if empty"
-                  disabled={isGenerating}
-                  className="w-full px-3 py-2 input-dark text-sm"
+                  className="w-full px-3 py-2 input-dark text-xs"
                 />
-              </div>
-
-              {/* Output Format */}
-              <div>
-                <label className="text-xs font-semibold text-zinc-400 block mb-1">Output Format</label>
-                <div className="flex gap-2">
-                  {(['png', 'jpeg', 'webp'] as const).map((fmt) => (
-                    <button
-                      key={fmt}
-                      onClick={() => setOutputFormat(fmt)}
-                      disabled={isGenerating}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                        outputFormat === fmt
-                          ? 'bg-accent-purple border-accent-purple text-white'
-                          : 'bg-transparent border-white/10 text-zinc-400 hover:border-white/20 hover:text-white'
-                      }`}
-                    >
-                      .{fmt === 'jpeg' ? 'jpg' : fmt}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Error */}
-      {error && (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
-          ⚠ {error}
-        </div>
-      )}
-
-      {/* Generate Button */}
-      <motion.button
-        onClick={handleGenerate}
-        disabled={isGenerating || !prompt.trim()}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className="w-full py-3.5 rounded-xl text-white font-semibold text-sm btn-glow flex items-center justify-center gap-2"
-      >
-        {isGenerating ? (
-          <>
-            <Loader2 size={16} className="animate-spin" />
-            Generating...
-          </>
-        ) : (
-          <>
-            <Sparkles size={16} />
-            Generate Image
-          </>
-        )}
-      </motion.button>
     </div>
   );
 };

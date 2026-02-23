@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Image as ImageIcon, Upload, Wand2, Menu, X, Sparkles } from 'lucide-react';
+import { Image as ImageIcon, Upload, Wand2, Menu, X, Sparkles, Sliders } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import PromptWorkspace from './components/PromptWorkspace';
+import BottomPromptBar from './components/BottomPromptBar';
 import GalleryView from './components/GalleryView';
 import ImageUpload from './components/ImageUpload';
 import ImagePreview from './components/ImagePreview';
@@ -14,17 +15,29 @@ import type { MultiEngineGenerationResult } from './components/MultiEngineGenera
 import type { HistoryEntry } from './components/GenerationHistory';
 import { useAppStore } from './store';
 import * as api from './services/api';
+import type { AIEngine, StylePreset, AspectRatio } from './services/api';
 import './styles/App.css';
 
 function App() {
-  const { appTab, setAppTab } = useAppStore();
+  const { appTab, setAppTab, genEngineId, genPrompt, genNegativePrompt, genStylePreset,
+    genAspectRatio, genLighting, genCameraAngle, genGuidanceScale, genSeed, genOutputFormat,
+    setGenSettings } = useAppStore();
+
+  // Data from API
+  const [engines, setEngines] = useState<AIEngine[]>([]);
+  const [stylePresets, setStylePresets] = useState<StylePreset[]>([]);
+  const [aspectRatios, setAspectRatios] = useState<AspectRatio[]>([]);
 
   // Generate tab state
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | undefined>();
   const [generatedImage, setGeneratedImage] = useState<string | undefined>();
   const [generatedImageMeta, setGeneratedImageMeta] = useState<{ engineName: string; promptUsed: string; outputFormat: string } | undefined>();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [compareEntries, setCompareEntries] = useState<[HistoryEntry, HistoryEntry] | null>(null);
+
+  // Mobile controls panel toggle (generate tab)
+  const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
 
   // Editor tab state
   const [originalImage, setOriginalImage] = useState<string | undefined>();
@@ -36,6 +49,21 @@ function App() {
 
   // Mobile sidebar
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Fetch engines + presets on mount
+  useEffect(() => {
+    api.getEngines().then((d) => {
+      setEngines(d.engines);
+      const first = d.engines.find((e) => e.available);
+      if (first && genEngineId === 'placeholder') {
+        setGenSettings({ genEngineId: first.id });
+      }
+    }).catch(() => {});
+    api.getStylePresets().then((d) => {
+      setStylePresets(d.style_presets);
+      setAspectRatios(d.aspect_ratios);
+    }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGenerationResult = useCallback((result: MultiEngineGenerationResult) => {
     const url = URL.createObjectURL(result.blob);
@@ -51,6 +79,36 @@ function App() {
     };
     setHistory((prev) => [entry, ...prev].slice(0, 24));
   }, []);
+
+  const handleGenerate = async () => {
+    if (!genPrompt.trim() || isGenerating) return;
+    setIsGenerating(true);
+    setGenerateError(undefined);
+    try {
+      const ratio = aspectRatios.find((r) => r.id === genAspectRatio);
+      const width = ratio?.width ?? 1024;
+      const height = ratio?.height ?? 1024;
+      const parsedSeed = genSeed ? parseInt(genSeed, 10) : undefined;
+      const result = await api.generateMultiEngine({
+        prompt: genPrompt,
+        engine_id: genEngineId,
+        negative_prompt: genNegativePrompt || undefined,
+        width, height,
+        aspect_ratio: genAspectRatio,
+        style_preset: genStylePreset,
+        lighting: genLighting,
+        camera_angle: genCameraAngle,
+        guidance_scale: genGuidanceScale,
+        seed: parsedSeed && !isNaN(parsedSeed) ? parsedSeed : undefined,
+        output_format: genOutputFormat,
+      });
+      handleGenerationResult({ ...result, prompt: genPrompt, outputFormat: genOutputFormat });
+    } catch (err: unknown) {
+      setGenerateError(err instanceof Error ? err.message : 'Generation failed');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleImageSelect = (file: File) => {
     const reader = new FileReader();
@@ -118,7 +176,7 @@ function App() {
     if (!currentFile) return;
     setIsProcessing(true); setError(undefined);
     try {
-      const blob = await api.outpaintImage(currentFile, direction as 'left'|'right'|'top'|'bottom'|'all', expandPixels, prompt);
+      const blob = await api.outpaintImage(currentFile, direction as 'left' | 'right' | 'top' | 'bottom' | 'all', expandPixels, prompt);
       const url = URL.createObjectURL(blob);
       setProcessedImage(url); setOriginalImage(url);
     }
@@ -141,7 +199,7 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#0E0E11' }}>
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar (nav) */}
       <div className="hidden lg:block">
         <Sidebar />
       </div>
@@ -169,12 +227,12 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
+      {/* Main workspace */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Bar */}
-        <header className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b border-white/[0.06]">
+        {/* ── Top Navigation Bar ── */}
+        <header className="flex-shrink-0 flex items-center justify-between px-4 md:px-5 py-3 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
-            {/* Mobile menu */}
+            {/* Mobile nav menu */}
             <button
               className="lg:hidden p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5"
               onClick={() => setMobileSidebarOpen(true)}
@@ -205,6 +263,17 @@ function App() {
                 <Wand2 size={13} /> Editor
               </button>
             </div>
+
+            {/* Mobile: toggle controls panel in generate mode */}
+            {appTab === 'generate' && (
+              <button
+                className="lg:hidden p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5"
+                onClick={() => setMobileControlsOpen((v) => !v)}
+                title="Toggle controls"
+              >
+                <Sliders size={18} />
+              </button>
+            )}
           </div>
 
           {/* Status badge */}
@@ -216,38 +285,68 @@ function App() {
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {/* Error Banner */}
-          {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
-              <p className="text-sm text-red-400">{error}</p>
-              <button onClick={() => setError(undefined)} className="text-red-400 hover:text-red-300">
-                <X size={16} />
-              </button>
-            </div>
-          )}
+        {/* ══════════════════════════════════════════════════════════════
+            GENERATE TAB  —  Adobe Firefly-style layout
+            Left Controls | Main Canvas / Results Grid | Bottom Prompt Bar
+        ══════════════════════════════════════════════════════════════ */}
+        {appTab === 'generate' && (
+          <>
+            {/* Middle area: controls panel + gallery */}
+            <div className="flex-1 flex overflow-hidden min-h-0">
 
-          {/* ===== GENERATE TAB ===== */}
-          {appTab === 'generate' && (
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6">
-              {/* Left: Prompt + Controls */}
-              <div className="xl:col-span-5 glass-card p-5">
-                <div className="flex items-center gap-2 mb-5">
-                  <div className="w-6 h-6 rounded-lg bg-accent-purple/20 flex items-center justify-center">
-                    <Sparkles size={12} className="text-accent-purple" />
-                  </div>
-                  <h2 className="text-sm font-semibold text-white">Create</h2>
+              {/* ── Left Sidebar Controls (desktop always visible) ── */}
+              <div className="hidden lg:flex flex-col w-64 xl:w-72 flex-shrink-0 border-r border-white/[0.06] overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/[0.06]">
+                  <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Controls</h2>
                 </div>
-                <PromptWorkspace
-                  onResult={handleGenerationResult}
-                  isGenerating={isGenerating}
-                  setIsGenerating={setIsGenerating}
-                />
+                <div className="flex-1 overflow-y-auto p-4">
+                  <PromptWorkspace
+                    engines={engines}
+                    stylePresets={stylePresets}
+                    aspectRatios={aspectRatios}
+                  />
+                </div>
               </div>
 
-              {/* Right: Gallery */}
-              <div className="xl:col-span-7">
+              {/* ── Mobile Controls Overlay ── */}
+              <AnimatePresence>
+                {mobileControlsOpen && (
+                  <>
+                    <div
+                      className="lg:hidden fixed inset-0 z-20 bg-black/60"
+                      onClick={() => setMobileControlsOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ x: -288 }}
+                      animate={{ x: 0 }}
+                      exit={{ x: -288 }}
+                      transition={{ duration: 0.25 }}
+                      className="lg:hidden fixed inset-y-0 left-0 w-72 z-30 border-r border-white/[0.06] overflow-y-auto"
+                      style={{ background: '#0E0E11' }}
+                    >
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Controls</h2>
+                        <button
+                          onClick={() => setMobileControlsOpen(false)}
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                      <div className="p-4">
+                        <PromptWorkspace
+                          engines={engines}
+                          stylePresets={stylePresets}
+                          aspectRatios={aspectRatios}
+                        />
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+
+              {/* ── Main Canvas / Results Grid ── */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-5">
                 <GalleryView
                   generatedImage={generatedImage}
                   generatedImageMeta={generatedImageMeta}
@@ -260,10 +359,33 @@ function App() {
                 />
               </div>
             </div>
-          )}
 
-          {/* ===== EDITOR TAB ===== */}
-          {appTab === 'editor' && (
+            {/* ── Bottom Anchored Prompt Bar ── */}
+            <BottomPromptBar
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
+              engines={engines}
+              error={generateError}
+              onDismissError={() => setGenerateError(undefined)}
+            />
+          </>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════
+            EDITOR TAB  —  unchanged
+        ══════════════════════════════════════════════════════════════ */}
+        {appTab === 'editor' && (
+          <main className="flex-1 overflow-y-auto p-4 md:p-6">
+            {/* Error Banner */}
+            {error && (
+              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
+                <p className="text-sm text-red-400">{error}</p>
+                <button onClick={() => setError(undefined)} className="text-red-400 hover:text-red-300">
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6">
               {/* Left: Upload + Tools */}
               <div className="xl:col-span-4 space-y-4">
@@ -337,8 +459,8 @@ function App() {
                 )}
               </div>
             </div>
-          )}
-        </main>
+          </main>
+        )}
       </div>
 
       {/* Comparison Modal */}
