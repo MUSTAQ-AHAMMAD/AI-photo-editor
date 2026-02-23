@@ -1,68 +1,53 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Image as ImageIcon, Upload, Wand2, Menu, X, Sparkles } from 'lucide-react';
+import Sidebar from './components/Sidebar';
+import PromptWorkspace from './components/PromptWorkspace';
+import GalleryView from './components/GalleryView';
 import ImageUpload from './components/ImageUpload';
-import ImageCanvas from './components/ImageCanvas';
 import ImagePreview from './components/ImagePreview';
 import EditingPanel, { FilterType } from './components/EditingPanel';
 import DownloadButton from './components/DownloadButton';
-import MultiEngineGenerationPanel from './components/MultiEngineGenerationPanel';
-import type { MultiEngineGenerationResult } from './components/MultiEngineGenerationPanel';
-import GenerationHistory from './components/GenerationHistory';
-import type { HistoryEntry } from './components/GenerationHistory';
+import ImageCanvas from './components/ImageCanvas';
 import ComparisonView from './components/ComparisonView';
-import MultiFormatDownload from './components/MultiFormatDownload';
+import type { MultiEngineGenerationResult } from './components/MultiEngineGenerationPanel';
+import type { HistoryEntry } from './components/GenerationHistory';
+import { useAppStore } from './store';
 import * as api from './services/api';
 import './styles/App.css';
 
-type AppTab = 'editor' | 'generate';
-
 function App() {
-  const [appTab, setAppTab] = useState<AppTab>('generate');
-  const [originalImage, setOriginalImage] = useState<string | undefined>();
-  const [processedImage, setProcessedImage] = useState<string | undefined>();
-  const [currentFile, setCurrentFile] = useState<File | undefined>();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showCanvas, setShowCanvas] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState(false);
-  const [error, setError] = useState<string | undefined>();
+  const { appTab, setAppTab } = useAppStore();
 
-  // Multi-engine generation state
+  // Generate tab state
+  const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | undefined>();
   const [generatedImageMeta, setGeneratedImageMeta] = useState<{ engineName: string; promptUsed: string; outputFormat: string } | undefined>();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [compareEntries, setCompareEntries] = useState<[HistoryEntry, HistoryEntry] | null>(null);
 
-  useEffect(() => {
-    // Check if AI features are enabled
-    api.checkHealth()
-      .then((health) => {
-        setAiEnabled(health.ai_models_enabled);
-      })
-      .catch((err) => {
-        console.error('Failed to check health:', err);
-      });
-  }, []);
+  // Editor tab state
+  const [originalImage, setOriginalImage] = useState<string | undefined>();
+  const [processedImage, setProcessedImage] = useState<string | undefined>();
+  const [currentFile, setCurrentFile] = useState<File | undefined>();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showCanvas, setShowCanvas] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+
+  // Mobile sidebar
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const handleGenerationResult = useCallback((result: MultiEngineGenerationResult) => {
     const url = URL.createObjectURL(result.blob);
     setGeneratedImage(url);
-    setGeneratedImageMeta({
-      engineName: result.engineName,
-      promptUsed: result.promptUsed,
-      outputFormat: result.outputFormat,
-    });
-    // Use crypto.randomUUID when available (modern browsers), otherwise fall back to a timestamp-based id
-    const genId =
-      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    setGeneratedImageMeta({ engineName: result.engineName, promptUsed: result.promptUsed, outputFormat: result.outputFormat });
+    const genId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const entry: HistoryEntry = {
-      id: genId,
-      imageUrl: url,
-      prompt: result.prompt,
-      engineName: result.engineName,
-      engineId: result.engineId,
-      timestamp: Date.now(),
-      outputFormat: result.outputFormat,
+      id: genId, imageUrl: url, prompt: result.prompt,
+      engineName: result.engineName, engineId: result.engineId,
+      timestamp: Date.now(), outputFormat: result.outputFormat,
     };
     setHistory((prev) => [entry, ...prev].slice(0, 24));
   }, []);
@@ -81,346 +66,284 @@ function App() {
 
   const handleRemoveBackground = async () => {
     if (!currentFile) return;
-
-    setIsProcessing(true);
-    setError(undefined);
-    try {
-      const blob = await api.removeBackground(currentFile);
-      const url = URL.createObjectURL(blob);
-      setProcessedImage(url);
-    } catch (err) {
-      console.error('Background removal failed:', err);
-      setError('Failed to remove background. Make sure the backend is running.');
-    } finally {
-      setIsProcessing(false);
-    }
+    setIsProcessing(true); setError(undefined);
+    try { const blob = await api.removeBackground(currentFile); setProcessedImage(URL.createObjectURL(blob)); }
+    catch { setError('Failed to remove background.'); }
+    finally { setIsProcessing(false); }
   };
 
   const handleApplyFilter = async (filter: FilterType) => {
     if (!currentFile) return;
-
-    setIsProcessing(true);
-    setError(undefined);
-    try {
-      const blob = await api.applyFilter(currentFile, filter);
-      const url = URL.createObjectURL(blob);
-      setProcessedImage(url);
-    } catch (err) {
-      console.error('Filter application failed:', err);
-      setError('Failed to apply filter. Make sure the backend is running.');
-    } finally {
-      setIsProcessing(false);
-    }
+    setIsProcessing(true); setError(undefined);
+    try { const blob = await api.applyFilter(currentFile, filter); setProcessedImage(URL.createObjectURL(blob)); }
+    catch { setError('Failed to apply filter.'); }
+    finally { setIsProcessing(false); }
   };
 
   const handleAdjustBrightness = async (factor: number) => {
     if (!currentFile) return;
-
-    setIsProcessing(true);
-    setError(undefined);
-    try {
-      const blob = await api.adjustBrightness(currentFile, factor);
-      const url = URL.createObjectURL(blob);
-      setProcessedImage(url);
-    } catch (err) {
-      console.error('Brightness adjustment failed:', err);
-      setError('Failed to adjust brightness. Make sure the backend is running.');
-    } finally {
-      setIsProcessing(false);
-    }
+    setIsProcessing(true); setError(undefined);
+    try { const blob = await api.adjustBrightness(currentFile, factor); setProcessedImage(URL.createObjectURL(blob)); }
+    catch { setError('Failed to adjust brightness.'); }
+    finally { setIsProcessing(false); }
   };
 
   const handleGenerateImage = async (prompt: string, stylePreset: string, aspectRatio: string, negativePrompt: string) => {
-    setIsProcessing(true);
-    setError(undefined);
-    try {
-      const blob = await api.generateWithStyle(prompt, stylePreset, negativePrompt, aspectRatio);
-      const url = URL.createObjectURL(blob);
-      setProcessedImage(url);
-    } catch (err) {
-      console.error('Image generation failed:', err);
-      setError('Failed to generate image. Make sure AI features are enabled in the backend.');
-    } finally {
-      setIsProcessing(false);
-    }
+    setIsProcessing(true); setError(undefined);
+    try { const blob = await api.generateWithStyle(prompt, stylePreset, negativePrompt, aspectRatio); setProcessedImage(URL.createObjectURL(blob)); }
+    catch { setError('Failed to generate image.'); }
+    finally { setIsProcessing(false); }
   };
 
   const handleGenerateFill = async (_prompt: string, _negativePrompt: string) => {
-    if (!currentFile) return;
-
-    setIsProcessing(true);
-    setError(undefined);
-    try {
-      // This requires a mask from canvas - need to show canvas first
-      setError('Please use the canvas to select an area first, then apply generative fill.');
-    } finally {
-      setIsProcessing(false);
-    }
+    setError('Please use the canvas to select an area first, then apply generative fill.');
   };
 
   const handleApplyStyleTransfer = async (stylePrompt: string, strength: number) => {
     if (!currentFile) return;
-
-    setIsProcessing(true);
-    setError(undefined);
-    try {
-      const blob = await api.applyStyleTransfer(currentFile, stylePrompt, strength);
-      const url = URL.createObjectURL(blob);
-      setProcessedImage(url);
-    } catch (err) {
-      console.error('Style transfer failed:', err);
-      setError('Failed to apply style transfer. Make sure AI features are enabled.');
-    } finally {
-      setIsProcessing(false);
-    }
+    setIsProcessing(true); setError(undefined);
+    try { const blob = await api.applyStyleTransfer(currentFile, stylePrompt, strength); setProcessedImage(URL.createObjectURL(blob)); }
+    catch { setError('Failed to apply style transfer.'); }
+    finally { setIsProcessing(false); }
   };
 
   const handleGenerateTextEffect = async (text: string, style: string) => {
-    setIsProcessing(true);
-    setError(undefined);
-    try {
-      const blob = await api.generateTextEffect(text, style);
-      const url = URL.createObjectURL(blob);
-      setProcessedImage(url);
-    } catch (err) {
-      console.error('Text effect generation failed:', err);
-      setError('Failed to generate text effect. Make sure AI features are enabled.');
-    } finally {
-      setIsProcessing(false);
-    }
+    setIsProcessing(true); setError(undefined);
+    try { const blob = await api.generateTextEffect(text, style); setProcessedImage(URL.createObjectURL(blob)); }
+    catch { setError('Failed to generate text effect.'); }
+    finally { setIsProcessing(false); }
   };
 
   const handleOutpaint = async (direction: string, expandPixels: number, prompt: string) => {
     if (!currentFile) return;
-
-    setIsProcessing(true);
-    setError(undefined);
+    setIsProcessing(true); setError(undefined);
     try {
-      const blob = await api.outpaintImage(
-        currentFile,
-        direction as 'left' | 'right' | 'top' | 'bottom' | 'all',
-        expandPixels,
-        prompt
-      );
+      const blob = await api.outpaintImage(currentFile, direction as 'left'|'right'|'top'|'bottom'|'all', expandPixels, prompt);
       const url = URL.createObjectURL(blob);
-      setProcessedImage(url);
-      setOriginalImage(url); // Update original to show extended image
-    } catch (err) {
-      console.error('Outpainting failed:', err);
-      setError('Failed to extend image. Make sure AI features are enabled.');
-    } finally {
-      setIsProcessing(false);
+      setProcessedImage(url); setOriginalImage(url);
     }
+    catch { setError('Failed to extend image.'); }
+    finally { setIsProcessing(false); }
   };
 
   const handleMaskCreate = async (maskBlob: Blob) => {
     if (!currentFile) return;
-
-    setIsProcessing(true);
-    setError(undefined);
+    setIsProcessing(true); setError(undefined);
     try {
       const maskFile = new File([maskBlob], 'mask.png', { type: 'image/png' });
       const blob = await api.inpaintImage(currentFile, maskFile, false);
-      const url = URL.createObjectURL(blob);
-      setProcessedImage(url);
+      setProcessedImage(URL.createObjectURL(blob));
       setShowCanvas(false);
-    } catch (err) {
-      console.error('Inpainting failed:', err);
-      setError('Failed to remove objects. Make sure the backend is running.');
-    } finally {
-      setIsProcessing(false);
     }
+    catch { setError('Failed to remove objects.'); }
+    finally { setIsProcessing(false); }
   };
 
   return (
-    <div className="app-container">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <header className="text-center text-white space-y-2">
-          <h1 className="text-5xl font-bold">AI Photo Editor</h1>
-          <p className="text-xl opacity-90">
-            Multi-engine AI image generation &amp; professional editing
-          </p>
-          {/* App-level Tab Navigation */}
-          <div className="flex justify-center gap-3 pt-2">
-            {([
-              { id: 'generate' as AppTab, label: '✨ Generate', icon: '🚀' },
-              { id: 'editor' as AppTab, label: '🎨 Editor', icon: '✏️' },
-            ] as const).map((tab) => (
+    <div className="flex h-screen overflow-hidden" style={{ background: '#0E0E11' }}>
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <Sidebar />
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {mobileSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 lg:hidden"
+          >
+            <div className="absolute inset-0 bg-black/60" onClick={() => setMobileSidebarOpen(false)} />
+            <motion.div
+              initial={{ x: -220 }}
+              animate={{ x: 0 }}
+              exit={{ x: -220 }}
+              transition={{ duration: 0.25 }}
+              className="relative z-50"
+            >
+              <Sidebar />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Bar */}
+        <header className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b border-white/[0.06]">
+          <div className="flex items-center gap-3">
+            {/* Mobile menu */}
+            <button
+              className="lg:hidden p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5"
+              onClick={() => setMobileSidebarOpen(true)}
+            >
+              <Menu size={20} />
+            </button>
+
+            {/* Tab switcher */}
+            <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06]">
               <button
-                key={tab.id}
-                onClick={() => setAppTab(tab.id)}
-                className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-200 ${
-                  appTab === tab.id
-                    ? 'bg-white text-indigo-700 shadow-lg'
-                    : 'bg-white/20 text-white hover:bg-white/30'
+                onClick={() => setAppTab('generate')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  appTab === 'generate'
+                    ? 'bg-accent-purple text-white shadow-glow-purple'
+                    : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                {tab.label}
+                <Sparkles size={13} /> Generate
               </button>
-            ))}
+              <button
+                onClick={() => setAppTab('editor')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  appTab === 'editor'
+                    ? 'bg-accent-purple text-white'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Wand2 size={13} /> Editor
+              </button>
+            </div>
+          </div>
+
+          {/* Status badge */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent-teal/10 border border-accent-teal/20 text-accent-teal text-[11px] font-medium">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent-teal animate-pulse" />
+              AI Ready
+            </div>
           </div>
         </header>
 
-        {/* Error Message */}
-        {error && (
-          <div className="card bg-red-50 border-2 border-red-200">
-            <p className="text-red-800 text-center">{error}</p>
-          </div>
-        )}
-
-        {/* ===================== GENERATE TAB ===================== */}
-        {appTab === 'generate' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left: Generation Controls */}
-            <div className="lg:col-span-1 space-y-4">
-              <MultiEngineGenerationPanel
-                onResult={handleGenerationResult}
-                disabled={false}
-              />
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          {/* Error Banner */}
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
+              <p className="text-sm text-red-400">{error}</p>
+              <button onClick={() => setError(undefined)} className="text-red-400 hover:text-red-300">
+                <X size={16} />
+              </button>
             </div>
+          )}
 
-            {/* Right: Result + History */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Generated Image Preview */}
-              <div className="card space-y-4">
-                {generatedImage ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-bold text-gray-800">Generated Image</h2>
-                      {generatedImageMeta && (
-                        <span className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-medium">
-                          {generatedImageMeta.engineName}
-                        </span>
-                      )}
-                    </div>
-                    {generatedImageMeta && (
-                      <p className="text-xs text-gray-500 italic truncate">
-                        Prompt: {generatedImageMeta.promptUsed}
-                      </p>
-                    )}
-                    <img
-                      src={generatedImage}
-                      alt="Generated"
-                      className="w-full rounded-xl shadow-md object-contain max-h-[60vh]"
-                    />
-                    <MultiFormatDownload
-                      imageUrl={generatedImage}
-                      baseFilename="ai-generated"
-                    />
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-64 text-gray-400 space-y-3">
-                    <span className="text-6xl">🎨</span>
-                    <p className="text-lg font-medium">Your generated image will appear here</p>
-                    <p className="text-sm">Choose an engine, enter a prompt, and click Generate</p>
+          {/* ===== GENERATE TAB ===== */}
+          {appTab === 'generate' && (
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6">
+              {/* Left: Prompt + Controls */}
+              <div className="xl:col-span-5 glass-card p-5">
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="w-6 h-6 rounded-lg bg-accent-purple/20 flex items-center justify-center">
+                    <Sparkles size={12} className="text-accent-purple" />
                   </div>
+                  <h2 className="text-sm font-semibold text-white">Create</h2>
+                </div>
+                <PromptWorkspace
+                  onResult={handleGenerationResult}
+                  isGenerating={isGenerating}
+                  setIsGenerating={setIsGenerating}
+                />
+              </div>
+
+              {/* Right: Gallery */}
+              <div className="xl:col-span-7">
+                <GalleryView
+                  generatedImage={generatedImage}
+                  generatedImageMeta={generatedImageMeta}
+                  isGenerating={isGenerating}
+                  history={history}
+                  onSelectFromHistory={(entry) => {
+                    setGeneratedImage(entry.imageUrl);
+                    setGeneratedImageMeta({ engineName: entry.engineName, promptUsed: entry.prompt, outputFormat: entry.outputFormat });
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ===== EDITOR TAB ===== */}
+          {appTab === 'editor' && (
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6">
+              {/* Left: Upload + Tools */}
+              <div className="xl:col-span-4 space-y-4">
+                <div className="glass-card p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-6 h-6 rounded-lg bg-accent-purple/20 flex items-center justify-center">
+                      <Upload size={12} className="text-accent-purple" />
+                    </div>
+                    <h2 className="text-sm font-semibold text-white">Upload Image</h2>
+                  </div>
+                  <ImageUpload onImageSelect={handleImageSelect} disabled={isProcessing} />
+                </div>
+
+                {originalImage && (
+                  <>
+                    <div className="glass-card p-5">
+                      <EditingPanel
+                        onRemoveBackground={handleRemoveBackground}
+                        onApplyFilter={handleApplyFilter}
+                        onAdjustBrightness={handleAdjustBrightness}
+                        onGenerateImage={handleGenerateImage}
+                        onGenerateFill={handleGenerateFill}
+                        onApplyStyleTransfer={handleApplyStyleTransfer}
+                        onGenerateTextEffect={handleGenerateTextEffect}
+                        onOutpaint={handleOutpaint}
+                        disabled={isProcessing}
+                        aiEnabled={true}
+                        hasImage={!!originalImage}
+                      />
+                    </div>
+                    <div className="glass-card p-4">
+                      <button
+                        onClick={() => setShowCanvas(!showCanvas)}
+                        disabled={isProcessing}
+                        className="w-full py-2.5 rounded-xl text-sm font-semibold text-white border border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 transition-colors disabled:opacity-50"
+                      >
+                        {showCanvas ? 'Hide' : 'Show'} Object Removal Tool
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
 
-              {/* Generation History */}
-              <div className="card">
-                <GenerationHistory
-                  history={history}
-                  onSelect={(entry) => setGeneratedImage(entry.imageUrl)}
-                  onClear={() => setHistory([])}
-                  onCompare={(entries) => setCompareEntries(entries)}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ===================== EDITOR TAB ===================== */}
-        {appTab === 'editor' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Upload and Tools */}
-            <div className="space-y-6">
-              <div className="card">
-                <ImageUpload
-                  onImageSelect={handleImageSelect}
-                  disabled={isProcessing}
-                />
-              </div>
-
-              {originalImage && (
-                <>
-                  <EditingPanel
-                    onRemoveBackground={handleRemoveBackground}
-                    onApplyFilter={handleApplyFilter}
-                    onAdjustBrightness={handleAdjustBrightness}
-                    onGenerateImage={handleGenerateImage}
-                    onGenerateFill={handleGenerateFill}
-                    onApplyStyleTransfer={handleApplyStyleTransfer}
-                    onGenerateTextEffect={handleGenerateTextEffect}
-                    onOutpaint={handleOutpaint}
-                    disabled={isProcessing}
-                    aiEnabled={aiEnabled}
-                    hasImage={!!originalImage}
-                  />
-
-                  <div className="card">
-                    <button
-                      onClick={() => setShowCanvas(!showCanvas)}
-                      disabled={isProcessing}
-                      className="w-full px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors disabled:opacity-50"
-                    >
-                      {showCanvas ? 'Hide' : 'Show'} Object Removal Tool
-                    </button>
+              {/* Right: Preview + Canvas */}
+              <div className="xl:col-span-8 space-y-4">
+                <div className="glass-card p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-6 h-6 rounded-lg bg-accent-purple/20 flex items-center justify-center">
+                      <ImageIcon size={12} className="text-accent-purple" />
+                    </div>
+                    <h2 className="text-sm font-semibold text-white">Preview</h2>
                   </div>
-                </>
-              )}
-            </div>
+                  <ImagePreview
+                    originalImage={originalImage}
+                    processedImage={processedImage}
+                    isProcessing={isProcessing}
+                  />
+                </div>
 
-            {/* Right Column - Preview and Canvas */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="card">
-                <ImagePreview
-                  originalImage={originalImage}
-                  processedImage={processedImage}
-                  isProcessing={isProcessing}
-                />
+                {showCanvas && originalImage && (
+                  <div className="glass-card p-5">
+                    <h2 className="text-sm font-semibold text-white mb-4">Object Removal</h2>
+                    <ImageCanvas image={originalImage} onMaskCreate={handleMaskCreate} />
+                  </div>
+                )}
+
+                {processedImage && (
+                  <div className="glass-card p-4 flex justify-center">
+                    <DownloadButton imageUrl={processedImage} filename="lumina-edited.png" disabled={isProcessing} />
+                  </div>
+                )}
               </div>
-
-              {showCanvas && originalImage && (
-                <div className="card">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                    Object Removal
-                  </h2>
-                  <ImageCanvas
-                    image={originalImage}
-                    onMaskCreate={handleMaskCreate}
-                  />
-                </div>
-              )}
-
-              {processedImage && (
-                <div className="card flex justify-center">
-                  <DownloadButton
-                    imageUrl={processedImage}
-                    filename="ai-edited-image.png"
-                    disabled={isProcessing}
-                  />
-                </div>
-              )}
             </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <footer className="text-center text-white text-sm opacity-75">
-          <p>
-            Built with FastAPI, React, and cutting-edge AI models • © 2024 AI Photo Editor
-          </p>
-        </footer>
+          )}
+        </main>
       </div>
 
-      {/* Side-by-side Comparison Modal */}
+      {/* Comparison Modal */}
       {compareEntries && (
-        <ComparisonView
-          entries={compareEntries}
-          onClose={() => setCompareEntries(null)}
-        />
+        <ComparisonView entries={compareEntries} onClose={() => setCompareEntries(null)} />
       )}
     </div>
   );
