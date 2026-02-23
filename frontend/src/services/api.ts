@@ -45,6 +45,35 @@ export interface StylePresetsResponse {
   aspect_ratios: AspectRatio[];
 }
 
+/** Descriptor for a single AI engine adapter. */
+export interface AIEngine {
+  id: string;
+  name: string;
+  description: string;
+  available: boolean;
+}
+
+export interface EnginesResponse {
+  engines: AIEngine[];
+}
+
+/** Options for the multi-engine generation endpoint. */
+export interface MultiEngineGenerateOptions {
+  prompt: string;
+  engine_id: string;
+  negative_prompt?: string;
+  width?: number;
+  height?: number;
+  aspect_ratio?: string;
+  style_preset?: string;
+  lighting?: string;
+  camera_angle?: string;
+  num_inference_steps?: number;
+  guidance_scale?: number;
+  seed?: number;
+  output_format?: 'png' | 'jpeg' | 'webp';
+}
+
 /**
  * Upload an image to the server.
  */
@@ -290,6 +319,52 @@ export const generateWithStyle = async (
     responseType: 'blob',
   });
   return response.data;
+};
+
+// ---------------------------------------------------------------------------
+// Multi-Engine API
+// ---------------------------------------------------------------------------
+
+/**
+ * Get all registered AI engine adapters and their availability status.
+ */
+export const getEngines = async (): Promise<EnginesResponse> => {
+  const response = await api.get<EnginesResponse>('/engines');
+  return response.data;
+};
+
+/**
+ * Generate an image using any registered AI engine adapter.
+ * Returns both the image blob and the response headers (engine metadata).
+ */
+export const generateMultiEngine = async (
+  opts: MultiEngineGenerateOptions
+): Promise<{ blob: Blob; engineId: string; engineName: string; promptUsed: string }> => {
+  const formData = new FormData();
+  formData.append('prompt', opts.prompt);
+  formData.append('engine_id', opts.engine_id);
+  if (opts.negative_prompt) formData.append('negative_prompt', opts.negative_prompt);
+  if (opts.width) formData.append('width', String(opts.width));
+  if (opts.height) formData.append('height', String(opts.height));
+  if (opts.aspect_ratio) formData.append('aspect_ratio', opts.aspect_ratio);
+  if (opts.style_preset) formData.append('style_preset', opts.style_preset);
+  if (opts.lighting) formData.append('lighting', opts.lighting);
+  if (opts.camera_angle) formData.append('camera_angle', opts.camera_angle);
+  if (opts.num_inference_steps) formData.append('num_inference_steps', String(opts.num_inference_steps));
+  if (opts.guidance_scale) formData.append('guidance_scale', String(opts.guidance_scale));
+  if (opts.seed !== undefined) formData.append('seed', String(opts.seed));
+  if (opts.output_format) formData.append('output_format', opts.output_format);
+
+  const response = await api.post('/generate-multi-engine', formData, {
+    responseType: 'blob',
+  });
+
+  return {
+    blob: response.data as Blob,
+    engineId: (response.headers['x-engine-id'] as string) || opts.engine_id,
+    engineName: (response.headers['x-engine-name'] as string) || opts.engine_id,
+    promptUsed: (response.headers['x-prompt-used'] as string) || opts.prompt,
+  };
 };
 
 export default api;
