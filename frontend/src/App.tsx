@@ -165,6 +165,14 @@ function App() {
     finally { setIsProcessing(false); }
   };
 
+  const handleApplyClothing = async (clothingDescription: string, strength: number) => {
+    if (!currentFile) return;
+    setIsProcessing(true); setError(undefined);
+    try { const blob = await api.applyClothing(currentFile, clothingDescription, strength); setProcessedImage(URL.createObjectURL(blob)); }
+    catch (err) { console.error('Clothing application failed:', err); setError('Failed to apply clothing.'); }
+    finally { setIsProcessing(false); }
+  };
+
   const handleGenerateTextEffect = async (text: string, style: string) => {
     setIsProcessing(true); setError(undefined);
     try { const blob = await api.generateTextEffect(text, style); setProcessedImage(URL.createObjectURL(blob)); }
@@ -411,6 +419,7 @@ function App() {
                         onApplyStyleTransfer={handleApplyStyleTransfer}
                         onGenerateTextEffect={handleGenerateTextEffect}
                         onOutpaint={handleOutpaint}
+                        onApplyClothing={handleApplyClothing}
                         disabled={isProcessing}
                         aiEnabled={true}
                         hasImage={!!originalImage}
