@@ -147,15 +147,19 @@ const GalleryView: React.FC<GalleryViewProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={(e) => e.target === e.currentTarget && closePreview()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
+            {/* Dedicated backdrop element */}
+            <div
+              className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+              onClick={closePreview}
+            />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="relative max-w-4xl w-full glass-card p-4"
+              className="relative z-10 max-w-4xl w-full glass-card p-4"
             >
               <button
                 onClick={closePreview}

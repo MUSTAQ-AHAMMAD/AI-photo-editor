@@ -68,7 +68,7 @@ function App() {
     if (!currentFile) return;
     setIsProcessing(true); setError(undefined);
     try { const blob = await api.removeBackground(currentFile); setProcessedImage(URL.createObjectURL(blob)); }
-    catch { setError('Failed to remove background.'); }
+    catch (err) { console.error('Background removal failed:', err); setError('Failed to remove background.'); }
     finally { setIsProcessing(false); }
   };
 
@@ -76,7 +76,7 @@ function App() {
     if (!currentFile) return;
     setIsProcessing(true); setError(undefined);
     try { const blob = await api.applyFilter(currentFile, filter); setProcessedImage(URL.createObjectURL(blob)); }
-    catch { setError('Failed to apply filter.'); }
+    catch (err) { console.error('Filter failed:', err); setError('Failed to apply filter.'); }
     finally { setIsProcessing(false); }
   };
 
@@ -84,14 +84,14 @@ function App() {
     if (!currentFile) return;
     setIsProcessing(true); setError(undefined);
     try { const blob = await api.adjustBrightness(currentFile, factor); setProcessedImage(URL.createObjectURL(blob)); }
-    catch { setError('Failed to adjust brightness.'); }
+    catch (err) { console.error('Brightness adjustment failed:', err); setError('Failed to adjust brightness.'); }
     finally { setIsProcessing(false); }
   };
 
   const handleGenerateImage = async (prompt: string, stylePreset: string, aspectRatio: string, negativePrompt: string) => {
     setIsProcessing(true); setError(undefined);
     try { const blob = await api.generateWithStyle(prompt, stylePreset, negativePrompt, aspectRatio); setProcessedImage(URL.createObjectURL(blob)); }
-    catch { setError('Failed to generate image.'); }
+    catch (err) { console.error('Image generation failed:', err); setError('Failed to generate image.'); }
     finally { setIsProcessing(false); }
   };
 
@@ -103,14 +103,14 @@ function App() {
     if (!currentFile) return;
     setIsProcessing(true); setError(undefined);
     try { const blob = await api.applyStyleTransfer(currentFile, stylePrompt, strength); setProcessedImage(URL.createObjectURL(blob)); }
-    catch { setError('Failed to apply style transfer.'); }
+    catch (err) { console.error('Style transfer failed:', err); setError('Failed to apply style transfer.'); }
     finally { setIsProcessing(false); }
   };
 
   const handleGenerateTextEffect = async (text: string, style: string) => {
     setIsProcessing(true); setError(undefined);
     try { const blob = await api.generateTextEffect(text, style); setProcessedImage(URL.createObjectURL(blob)); }
-    catch { setError('Failed to generate text effect.'); }
+    catch (err) { console.error('Text effect failed:', err); setError('Failed to generate text effect.'); }
     finally { setIsProcessing(false); }
   };
 
@@ -122,7 +122,7 @@ function App() {
       const url = URL.createObjectURL(blob);
       setProcessedImage(url); setOriginalImage(url);
     }
-    catch { setError('Failed to extend image.'); }
+    catch (err) { console.error('Outpaint failed:', err); setError('Failed to extend image.'); }
     finally { setIsProcessing(false); }
   };
 
@@ -135,7 +135,7 @@ function App() {
       setProcessedImage(URL.createObjectURL(blob));
       setShowCanvas(false);
     }
-    catch { setError('Failed to remove objects.'); }
+    catch (err) { console.error('Inpaint failed:', err); setError('Failed to remove objects.'); }
     finally { setIsProcessing(false); }
   };
 
