@@ -149,9 +149,10 @@ const PromptWorkspace: React.FC<PromptWorkspaceProps> = ({ onResult, isGeneratin
           className="w-full px-4 py-3 input-dark text-sm resize-none pr-12"
         />
         <button
-          onClick={() => {/* AI enhance placeholder */}}
-          className="absolute right-3 top-3 p-1.5 rounded-lg text-zinc-500 hover:text-accent-teal hover:bg-white/5 transition-all"
-          title="AI Enhance Prompt"
+          onClick={() => {}}
+          className="absolute right-3 top-3 p-1.5 rounded-lg text-zinc-500 hover:text-accent-teal hover:bg-white/5 transition-all opacity-50 cursor-not-allowed"
+          title="AI Enhance Prompt (coming soon)"
+          disabled
         >
           <Wand2 size={16} />
         </button>
