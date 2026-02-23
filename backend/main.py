@@ -16,6 +16,8 @@ from PIL import Image
 
 from image_processor import get_processor
 from ai_models import get_model_manager
+from gemini_integration import get_gemini_integration
+from advanced_ai_models import get_advanced_model_manager
 
 # Load environment variables
 load_dotenv()
@@ -28,6 +30,10 @@ UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
 DEVICE = os.getenv("DEVICE", "cpu")
 MODEL_CACHE_DIR = os.getenv("MODEL_CACHE_DIR", "./models")
 ENABLE_STABLE_DIFFUSION = os.getenv("ENABLE_STABLE_DIFFUSION", "false").lower() == "true"
+ENABLE_GEMINI = os.getenv("ENABLE_GEMINI", "false").lower() == "true"
+ENABLE_CONTROLNET = os.getenv("ENABLE_CONTROLNET", "false").lower() == "true"
+ENABLE_SDXL = os.getenv("ENABLE_SDXL", "false").lower() == "true"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Create upload directory
 Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
@@ -59,14 +65,34 @@ if ENABLE_STABLE_DIFFUSION:
 else:
     ai_models = None
 
+# Initialize Gemini integration
+if ENABLE_GEMINI:
+    try:
+        gemini = get_gemini_integration(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Warning: Could not initialize Gemini: {e}")
+        gemini = None
+else:
+    gemini = None
+
+# Initialize advanced AI models
+if ENABLE_CONTROLNET or ENABLE_SDXL:
+    try:
+        advanced_models = get_advanced_model_manager(device=DEVICE, model_cache_dir=MODEL_CACHE_DIR)
+    except Exception as e:
+        print(f"Warning: Could not initialize advanced models: {e}")
+        advanced_models = None
+else:
+    advanced_models = None
+
 
 @app.get("/")
 async def root():
     """Root endpoint with API information."""
     return {
         "name": "AI Photo Editor API",
-        "version": "2.0.0",
-        "description": "AI-powered photo editing with advanced image generation and manipulation",
+        "version": "3.0.0",
+        "description": "AI-powered photo editing with Gemini Pro, ControlNet, SDXL and advanced AI features",
         "endpoints": {
             "basic": {
                 "upload": "/upload",
@@ -82,13 +108,34 @@ async def root():
                 "style_transfer": "/style-transfer",
                 "generate_with_style": "/generate-with-style"
             },
+            "gemini_ai": {
+                "analyze_image": "/analyze-image",
+                "generate_caption": "/generate-caption",
+                "enhance_prompt": "/enhance-prompt",
+                "suggest_edits": "/suggest-edits",
+                "extract_objects": "/extract-objects",
+                "generate_negative_prompt": "/generate-negative-prompt",
+                "suggest_color_palette": "/suggest-color-palette"
+            },
+            "advanced_ai": {
+                "generate_with_controlnet": "/generate-with-controlnet",
+                "generate_with_sdxl": "/generate-with-sdxl",
+                "transform_with_sdxl": "/transform-with-sdxl"
+            },
             "legacy": {
                 "generate_image": "/generate-image"
             },
             "info": {
                 "health": "/health",
-                "style_presets": "/style-presets"
+                "style_presets": "/style-presets",
+                "advanced_models_info": "/advanced-models-info"
             }
+        },
+        "features": {
+            "stable_diffusion": ENABLE_STABLE_DIFFUSION,
+            "gemini_pro": ENABLE_GEMINI,
+            "controlnet": ENABLE_CONTROLNET,
+            "sdxl": ENABLE_SDXL
         }
     }
 
@@ -99,6 +146,8 @@ async def health_check():
     return {
         "status": "healthy",
         "ai_models_enabled": ai_models is not None,
+        "gemini_enabled": gemini is not None,
+        "advanced_models_enabled": advanced_models is not None,
         "device": DEVICE
     }
 
@@ -671,6 +720,392 @@ async def generate_with_style(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+
+
+# Gemini AI Integration Endpoints
+
+@app.post("/analyze-image")
+async def analyze_image_endpoint(
+    file: UploadFile = File(...),
+    analysis_type: str = Form("detailed")
+):
+    """
+    Analyze an image using Gemini Vision Pro.
+    
+    Args:
+        file: Image file to analyze
+        analysis_type: Type of analysis ("detailed", "simple", "artistic", "technical")
+    
+    Returns:
+        JSON with image analysis
+    """
+    if gemini is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini features not enabled. Set ENABLE_GEMINI=true and GEMINI_API_KEY in .env"
+        )
+    
+    try:
+        image = processor.load_from_upload(file)
+        result = gemini.analyze_image(image, analysis_type=analysis_type)
+        return JSONResponse(content=result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
+
+
+@app.post("/generate-caption")
+async def generate_caption_endpoint(
+    file: UploadFile = File(...),
+    style: str = Form("descriptive")
+):
+    """
+    Generate a caption for an image using Gemini Vision.
+    
+    Args:
+        file: Image file
+        style: Caption style ("descriptive", "creative", "technical", "social")
+    
+    Returns:
+        JSON with generated caption
+    """
+    if gemini is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini features not enabled. Set ENABLE_GEMINI=true and GEMINI_API_KEY in .env"
+        )
+    
+    try:
+        image = processor.load_from_upload(file)
+        caption = gemini.generate_caption(image, style=style)
+        return JSONResponse(content={"caption": caption, "style": style})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Caption generation failed: {str(e)}")
+
+
+@app.post("/enhance-prompt")
+async def enhance_prompt_endpoint(
+    prompt: str = Form(...),
+    context: str = Form("image generation")
+):
+    """
+    Enhance a prompt using Gemini's language understanding.
+    
+    Args:
+        prompt: Original prompt
+        context: Context ("image generation", "style transfer", "editing")
+    
+    Returns:
+        JSON with enhanced prompt
+    """
+    if gemini is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini features not enabled. Set ENABLE_GEMINI=true and GEMINI_API_KEY in .env"
+        )
+    
+    try:
+        enhanced = gemini.enhance_prompt(prompt, context=context)
+        return JSONResponse(content={
+            "original_prompt": prompt,
+            "enhanced_prompt": enhanced,
+            "context": context
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prompt enhancement failed: {str(e)}")
+
+
+@app.post("/suggest-edits")
+async def suggest_edits_endpoint(file: UploadFile = File(...)):
+    """
+    Get AI-powered edit suggestions for an image using Gemini Vision.
+    
+    Args:
+        file: Image file to analyze
+    
+    Returns:
+        JSON with edit suggestions
+    """
+    if gemini is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini features not enabled. Set ENABLE_GEMINI=true and GEMINI_API_KEY in .env"
+        )
+    
+    try:
+        image = processor.load_from_upload(file)
+        result = gemini.suggest_edits(image)
+        return JSONResponse(content=result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Edit suggestion failed: {str(e)}")
+
+
+@app.post("/extract-objects")
+async def extract_objects_endpoint(file: UploadFile = File(...)):
+    """
+    Extract and list objects in an image using Gemini Vision.
+    
+    Args:
+        file: Image file to analyze
+    
+    Returns:
+        JSON with list of detected objects
+    """
+    if gemini is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini features not enabled. Set ENABLE_GEMINI=true and GEMINI_API_KEY in .env"
+        )
+    
+    try:
+        image = processor.load_from_upload(file)
+        objects = gemini.extract_objects(image)
+        return JSONResponse(content={"objects": objects})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Object extraction failed: {str(e)}")
+
+
+@app.post("/generate-negative-prompt")
+async def generate_negative_prompt_endpoint(prompt: str = Form(...)):
+    """
+    Generate a negative prompt for image generation using Gemini.
+    
+    Args:
+        prompt: Positive prompt
+    
+    Returns:
+        JSON with generated negative prompt
+    """
+    if gemini is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini features not enabled. Set ENABLE_GEMINI=true and GEMINI_API_KEY in .env"
+        )
+    
+    try:
+        negative = gemini.generate_negative_prompt(prompt)
+        return JSONResponse(content={
+            "positive_prompt": prompt,
+            "negative_prompt": negative
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Negative prompt generation failed: {str(e)}")
+
+
+@app.post("/suggest-color-palette")
+async def suggest_color_palette_endpoint(file: UploadFile = File(...)):
+    """
+    Suggest color palette based on an image using Gemini Vision.
+    
+    Args:
+        file: Image file to analyze
+    
+    Returns:
+        JSON with color palette suggestions
+    """
+    if gemini is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini features not enabled. Set ENABLE_GEMINI=true and GEMINI_API_KEY in .env"
+        )
+    
+    try:
+        image = processor.load_from_upload(file)
+        result = gemini.suggest_color_palette(image)
+        return JSONResponse(content=result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Color palette suggestion failed: {str(e)}")
+
+
+# Advanced AI Model Endpoints (ControlNet, SDXL)
+
+@app.post("/generate-with-controlnet")
+async def generate_with_controlnet_endpoint(
+    file: UploadFile = File(...),
+    prompt: str = Form(...),
+    controlnet_type: str = Form("canny"),
+    negative_prompt: Optional[str] = Form(None),
+    num_inference_steps: int = Form(50),
+    guidance_scale: float = Form(7.5),
+    controlnet_conditioning_scale: float = Form(1.0),
+    preprocess: bool = Form(True)
+):
+    """
+    Generate image using ControlNet for precise structure control.
+    
+    Args:
+        file: Control image (or raw image if preprocess=True)
+        prompt: Text description
+        controlnet_type: Type ("canny", "depth", "hed", "mlsd", "openpose", "scribble", etc.)
+        negative_prompt: What to avoid
+        num_inference_steps: Number of steps (20-100)
+        guidance_scale: Prompt adherence (1.0-15.0)
+        controlnet_conditioning_scale: ControlNet strength (0.0-2.0)
+        preprocess: Auto-preprocess the control image
+    
+    Returns:
+        Generated image with ControlNet guidance
+    """
+    if advanced_models is None or not ENABLE_CONTROLNET:
+        raise HTTPException(
+            status_code=503,
+            detail="ControlNet not enabled. Set ENABLE_CONTROLNET=true in .env"
+        )
+    
+    try:
+        control_image = processor.load_from_upload(file)
+        result = advanced_models.generate_with_controlnet(
+            control_image=control_image,
+            prompt=prompt,
+            controlnet_type=controlnet_type,
+            negative_prompt=negative_prompt,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            controlnet_conditioning_scale=controlnet_conditioning_scale,
+            preprocess=preprocess
+        )
+        
+        output = processor.to_bytes(result, format="PNG")
+        return StreamingResponse(
+            io.BytesIO(output),
+            media_type="image/png",
+            headers={"Content-Disposition": f"attachment; filename=controlnet-{controlnet_type}.png"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ControlNet generation failed: {str(e)}")
+
+
+@app.post("/generate-with-sdxl")
+async def generate_with_sdxl_endpoint(
+    prompt: str = Form(...),
+    negative_prompt: Optional[str] = Form(None),
+    width: int = Form(1024),
+    height: int = Form(1024),
+    num_inference_steps: int = Form(50),
+    guidance_scale: float = Form(7.5),
+    use_refiner: bool = Form(False),
+    refiner_steps: int = Form(50),
+    seed: Optional[int] = Form(None)
+):
+    """
+    Generate high-quality image using Stable Diffusion XL.
+    
+    Args:
+        prompt: Text description
+        negative_prompt: What to avoid
+        width: Output width (recommended: 1024)
+        height: Output height (recommended: 1024)
+        num_inference_steps: Number of steps
+        guidance_scale: Prompt adherence
+        use_refiner: Use SDXL refiner for enhanced quality
+        refiner_steps: Refiner steps
+        seed: Random seed
+    
+    Returns:
+        High-quality SDXL generated image
+    """
+    if advanced_models is None or not ENABLE_SDXL:
+        raise HTTPException(
+            status_code=503,
+            detail="SDXL not enabled. Set ENABLE_SDXL=true in .env"
+        )
+    
+    try:
+        result = advanced_models.generate_with_sdxl(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            width=width,
+            height=height,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            use_refiner=use_refiner,
+            refiner_steps=refiner_steps,
+            seed=seed
+        )
+        
+        output = processor.to_bytes(result, format="PNG")
+        return StreamingResponse(
+            io.BytesIO(output),
+            media_type="image/png",
+            headers={"Content-Disposition": "attachment; filename=sdxl-generated.png"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"SDXL generation failed: {str(e)}")
+
+
+@app.post("/transform-with-sdxl")
+async def transform_with_sdxl_endpoint(
+    file: UploadFile = File(...),
+    prompt: str = Form(...),
+    negative_prompt: Optional[str] = Form(None),
+    strength: float = Form(0.75),
+    num_inference_steps: int = Form(50),
+    guidance_scale: float = Form(7.5)
+):
+    """
+    Transform image using SDXL img2img for high-quality style transfer.
+    
+    Args:
+        file: Input image
+        prompt: Transformation description
+        negative_prompt: What to avoid
+        strength: Transformation strength (0.0-1.0)
+        num_inference_steps: Number of steps
+        guidance_scale: Prompt adherence
+    
+    Returns:
+        Transformed high-quality image
+    """
+    if advanced_models is None or not ENABLE_SDXL:
+        raise HTTPException(
+            status_code=503,
+            detail="SDXL not enabled. Set ENABLE_SDXL=true in .env"
+        )
+    
+    try:
+        image = processor.load_from_upload(file)
+        result = advanced_models.transform_with_sdxl(
+            image=image,
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            strength=strength,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale
+        )
+        
+        output = processor.to_bytes(result, format="PNG")
+        return StreamingResponse(
+            io.BytesIO(output),
+            media_type="image/png",
+            headers={"Content-Disposition": "attachment; filename=sdxl-transformed.png"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"SDXL transformation failed: {str(e)}")
+
+
+@app.get("/advanced-models-info")
+async def advanced_models_info():
+    """Get information about available advanced AI models."""
+    if advanced_models is None:
+        return JSONResponse(content={
+            "controlnet_enabled": ENABLE_CONTROLNET,
+            "sdxl_enabled": ENABLE_SDXL,
+            "gemini_enabled": ENABLE_GEMINI,
+            "message": "Advanced models not initialized"
+        })
+    
+    try:
+        available = advanced_models.list_available_models()
+        loaded = advanced_models.get_loaded_models()
+        
+        return JSONResponse(content={
+            "controlnet_enabled": ENABLE_CONTROLNET,
+            "sdxl_enabled": ENABLE_SDXL,
+            "gemini_enabled": ENABLE_GEMINI,
+            "available_models": available,
+            "loaded_models": loaded
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get model info: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ Supports multiple model versions for optimal results.
 Advanced features: Generative Fill, Outpainting, Style Transfer, etc.
 """
 import os
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any
 import torch
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -68,7 +68,7 @@ class AIModelManager:
         self.sd_pipeline = None
         self.inpaint_pipeline = None
         self.img2img_pipeline = None
-        self.loaded_models: Dict[str, any] = {}
+        self.loaded_models: Dict[str, Any] = {}
         self.current_model_id = None
 
         # Create cache directory if it doesn't exist
