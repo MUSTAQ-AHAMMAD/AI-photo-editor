@@ -18,6 +18,10 @@ from image_processor import get_processor
 from ai_models import get_model_manager
 from gemini_integration import get_gemini_integration
 from advanced_ai_models import get_advanced_model_manager
+from ai_engine_adapters import (
+    GenerationOptions,
+    build_registry,
+)
 
 # Load environment variables
 load_dotenv()
@@ -84,6 +88,9 @@ if ENABLE_CONTROLNET or ENABLE_SDXL:
         advanced_models = None
 else:
     advanced_models = None
+
+# Build multi-engine registry (always initialised; availability per-engine depends on API keys)
+engine_registry = build_registry(ai_models)
 
 
 @app.get("/")
@@ -1106,6 +1113,111 @@ async def advanced_models_info():
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get model info: {str(e)}")
+
+
+# ---------------------------------------------------------------------------
+# Multi-Engine AI Generation endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/engines")
+async def list_engines():
+    """
+    List all registered AI engine adapters and their availability.
+
+    Returns a list of engine descriptors including whether each engine can be
+    used (API key configured, local model loaded, etc.).
+    """
+    return {"engines": engine_registry.list_engines()}
+
+
+@app.post("/generate-multi-engine")
+async def generate_multi_engine(
+    prompt: str = Form(...),
+    engine_id: str = Form("placeholder"),
+    negative_prompt: Optional[str] = Form(""),
+    width: int = Form(1024),
+    height: int = Form(1024),
+    aspect_ratio: str = Form("1:1"),
+    style_preset: str = Form("none"),
+    lighting: str = Form("natural"),
+    camera_angle: str = Form("eye level"),
+    num_inference_steps: int = Form(30),
+    guidance_scale: float = Form(7.5),
+    seed: Optional[int] = Form(None),
+    output_format: str = Form("png"),
+):
+    """
+    Generate an image using the specified AI engine adapter.
+
+    Args:
+        prompt: Text description of the desired image.
+        engine_id: Engine to use (see GET /engines for available ids).
+        negative_prompt: What to avoid in the generated image.
+        width / height: Output dimensions.
+        aspect_ratio: Descriptive ratio string (used for UI labelling).
+        style_preset: One of the named style presets.
+        lighting: Lighting condition modifier.
+        camera_angle: Camera perspective modifier.
+        num_inference_steps: Denoising steps (quality vs speed).
+        guidance_scale: Prompt adherence strength.
+        seed: Optional RNG seed for reproducibility.
+        output_format: 'png', 'jpeg', or 'webp'.
+
+    Returns:
+        Generated image as a streaming binary response.
+    """
+    if output_format not in ("png", "jpeg", "webp"):
+        raise HTTPException(status_code=400, detail="output_format must be png, jpeg, or webp")
+
+    try:
+        adapter = engine_registry.get(engine_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    if not adapter.is_available():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Engine '{engine_id}' is not available. "
+                "Please configure the required API key in the backend .env file."
+            ),
+        )
+
+    options = GenerationOptions(
+        prompt=prompt,
+        negative_prompt=negative_prompt or "",
+        width=width,
+        height=height,
+        aspect_ratio=aspect_ratio,
+        style_preset=style_preset,
+        lighting=lighting,
+        camera_angle=camera_angle,
+        num_inference_steps=num_inference_steps,
+        guidance_scale=guidance_scale,
+        seed=seed,
+    )
+
+    try:
+        result = adapter.generate_image(options)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Generation failed: {exc}")
+
+    # Normalise format string for Pillow (JPEG, not JPG or jpeg)
+    fmt_upper = "JPEG" if output_format.lower() in ("jpeg", "jpg") else output_format.upper()
+
+    output_bytes = processor.to_bytes(result.image, format=fmt_upper)
+    media_type_map = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}
+
+    return StreamingResponse(
+        io.BytesIO(output_bytes),
+        media_type=media_type_map.get(fmt_upper, "image/png"),
+        headers={
+            "Content-Disposition": f"attachment; filename=generated-{uuid.uuid4().hex[:8]}.{output_format}",
+            "X-Engine-Id": result.engine_id,
+            "X-Engine-Name": result.engine_name,
+            "X-Prompt-Used": result.prompt_used[:500],
+        },
+    )
 
 
 if __name__ == "__main__":
