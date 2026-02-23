@@ -62,7 +62,7 @@ const MultiFormatDownload: React.FC<MultiFormatDownloadProps> = ({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+      <p className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mb-2">
         <span>⬇</span> Download
       </p>
       <div className="flex flex-wrap gap-2">
@@ -71,7 +71,7 @@ const MultiFormatDownload: React.FC<MultiFormatDownloadProps> = ({
             key={fmt}
             onClick={() => downloadAs(fmt)}
             disabled={disabled || converting}
-            className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+            className="px-3 py-1.5 text-xs font-medium bg-white/[0.05] border border-white/10 text-zinc-300 hover:text-white hover:border-white/20 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {converting ? '…' : `.${fmt === 'jpeg' ? 'jpg' : fmt}`} — {FORMAT_LABELS[fmt].split(' ')[0]}
           </button>
