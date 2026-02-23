@@ -673,6 +673,67 @@ async def apply_style_transfer(
         raise HTTPException(status_code=500, detail=f"Style transfer failed: {str(e)}")
 
 
+@app.post("/apply-clothing")
+async def apply_clothing(
+    image: UploadFile = File(...),
+    clothing_description: str = Form(...),
+    strength: float = Form(0.65),
+    num_inference_steps: int = Form(50),
+    guidance_scale: float = Form(7.5)
+):
+    """
+    Virtual Try-On: Apply clothing/dress to a person in an image using AI.
+
+    Args:
+        image: Original image file containing a person
+        clothing_description: Description of the clothing to apply (e.g., "red floral summer dress")
+        strength: How strongly to apply the clothing transformation (0.0-1.0, default 0.65)
+        num_inference_steps: Number of denoising steps (10-50)
+        guidance_scale: How closely to follow the clothing description (1.0-15.0)
+
+    Returns:
+        Image with the specified clothing applied to the person
+    """
+    if ai_models is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features not enabled. Set ENABLE_STABLE_DIFFUSION=true in .env"
+        )
+
+    try:
+        # Validate parameters
+        if strength < 0.0 or strength > 1.0:
+            raise HTTPException(status_code=400, detail="Strength must be between 0.0 and 1.0")
+        if guidance_scale < 1.0 or guidance_scale > 15.0:
+            raise HTTPException(status_code=400, detail="guidance_scale must be between 1.0 and 15.0")
+        if num_inference_steps < 10 or num_inference_steps > 50:
+            raise HTTPException(status_code=400, detail="num_inference_steps must be between 10 and 50")
+
+        # Read image
+        image_contents = await image.read()
+        img = processor.load_image(image_contents)
+
+        # Apply clothing
+        result = ai_models.apply_clothing(
+            image=img,
+            clothing_description=clothing_description,
+            strength=strength,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale
+        )
+
+        # Convert to bytes
+        output = processor.to_bytes(result, format="PNG")
+
+        return StreamingResponse(
+            io.BytesIO(output),
+            media_type="image/png",
+            headers={"Content-Disposition": "attachment; filename=clothing-result.png"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Clothing application failed: {str(e)}")
+
+
 @app.post("/generate-with-style")
 async def generate_with_style(
     prompt: str = Form(...),

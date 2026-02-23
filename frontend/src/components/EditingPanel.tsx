@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as api from '../services/api';
 
 export type FilterType = 'none' | 'blur' | 'sharpen' | 'edge' | 'grayscale';
-export type TabType = 'basic' | 'generate' | 'effects' | 'outpaint';
+export type TabType = 'basic' | 'generate' | 'effects' | 'outpaint' | 'clothing';
 
 interface EditingPanelProps {
   onRemoveBackground: () => void;
@@ -13,6 +13,7 @@ interface EditingPanelProps {
   onApplyStyleTransfer: (stylePrompt: string, strength: number) => void;
   onGenerateTextEffect: (text: string, style: string) => void;
   onOutpaint: (direction: string, expandPixels: number, prompt: string) => void;
+  onApplyClothing: (clothingDescription: string, strength: number) => void;
   disabled?: boolean;
   aiEnabled?: boolean;
   hasImage?: boolean;
@@ -27,6 +28,7 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
   onApplyStyleTransfer,
   onGenerateTextEffect,
   onOutpaint,
+  onApplyClothing,
   disabled = false,
   aiEnabled = false,
   hasImage = false,
@@ -59,6 +61,10 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
   const [outpaintDirection, setOutpaintDirection] = useState<string>('all');
   const [outpaintPixels, setOutpaintPixels] = useState(256);
   const [outpaintPrompt, setOutpaintPrompt] = useState('');
+
+  // Clothing / Virtual Try-On
+  const [clothingDescription, setClothingDescription] = useState('');
+  const [clothingStrength, setClothingStrength] = useState(0.65);
 
   useEffect(() => {
     if (aiEnabled) {
@@ -107,11 +113,18 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
     onOutpaint(outpaintDirection, outpaintPixels, outpaintPrompt);
   };
 
+  const handleApplyClothing = () => {
+    if (clothingDescription.trim()) {
+      onApplyClothing(clothingDescription, clothingStrength);
+    }
+  };
+
   const tabs = [
     { id: 'basic' as TabType, name: 'Basic', icon: '🎨' },
     { id: 'generate' as TabType, name: 'Generate', icon: '✨', requiresAI: true },
     { id: 'effects' as TabType, name: 'Effects', icon: '🎭', requiresAI: true },
     { id: 'outpaint' as TabType, name: 'Extend', icon: '🖼️', requiresAI: true },
+    { id: 'clothing' as TabType, name: 'Clothing', icon: '👗', requiresAI: true },
   ];
 
   return (
@@ -485,6 +498,67 @@ const EditingPanel: React.FC<EditingPanelProps> = ({
               className="w-full px-4 py-3 mt-4 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-lg hover:from-orange-600 hover:to-amber-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
             >
               Extend Image
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Clothing / Virtual Try-On Tab */}
+      {activeTab === 'clothing' && (
+        <div className="space-y-4 pt-4">
+          <div className="p-4 bg-gradient-to-br from-fuchsia-50 to-pink-100 rounded-xl border border-fuchsia-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+              <span className="text-2xl">👗</span> Virtual Try-On
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Describe clothing to apply to the person in the image
+            </p>
+
+            <input
+              type="text"
+              value={clothingDescription}
+              onChange={(e) => setClothingDescription(e.target.value)}
+              placeholder="e.g., red floral summer dress, blue denim jacket..."
+              disabled={disabled || !hasImage}
+              className="w-full px-4 py-3 border-2 border-fuchsia-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent shadow-sm"
+            />
+
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span>💪</span> Transformation Strength:{' '}
+                <span className="text-fuchsia-600">{clothingStrength.toFixed(2)}</span>
+              </label>
+              <input
+                type="range"
+                min="0.3"
+                max="0.9"
+                step="0.05"
+                value={clothingStrength}
+                onChange={(e) => setClothingStrength(Number(e.target.value))}
+                disabled={disabled || !hasImage}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-fuchsia-500"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Subtle</span>
+                <span>Strong</span>
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-fuchsia-50 border border-fuchsia-200 rounded-lg">
+              <p className="text-xs text-fuchsia-800 font-semibold mb-1">💡 Tips for best results:</p>
+              <ul className="text-xs text-fuchsia-700 list-disc list-inside space-y-1">
+                <li>Use a clear photo of a person facing forward</li>
+                <li>Describe clothing in detail (color, style, material)</li>
+                <li>Lower strength preserves more of the original photo</li>
+              </ul>
+            </div>
+
+            <button
+              onClick={handleApplyClothing}
+              disabled={disabled || !hasImage || !clothingDescription.trim()}
+              className="w-full px-4 py-3 mt-4 bg-gradient-to-r from-fuchsia-500 to-pink-600 text-white rounded-lg hover:from-fuchsia-600 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
+            >
+              Apply Clothing
             </button>
           </div>
         </div>

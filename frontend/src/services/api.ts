@@ -270,6 +270,29 @@ export const generateTextEffect = async (
 };
 
 /**
+ * Apply clothing/dress to a person in an image (virtual try-on).
+ */
+export const applyClothing = async (
+  image: File,
+  clothingDescription: string,
+  strength: number = 0.65,
+  numInferenceSteps: number = 50,
+  guidanceScale: number = 7.5
+): Promise<Blob> => {
+  const formData = new FormData();
+  formData.append('image', image);
+  formData.append('clothing_description', clothingDescription);
+  formData.append('strength', String(strength));
+  formData.append('num_inference_steps', String(numInferenceSteps));
+  formData.append('guidance_scale', String(guidanceScale));
+
+  const response = await api.post('/apply-clothing', formData, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+/**
  * Apply style transfer to an image.
  */
 export const applyStyleTransfer = async (

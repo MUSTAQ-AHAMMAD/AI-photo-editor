@@ -511,6 +511,61 @@ class AIModelManager:
 
         return result.images[0]
 
+    def apply_clothing(
+        self,
+        image: Image.Image,
+        clothing_description: str,
+        strength: float = 0.65,
+        num_inference_steps: int = 50,
+        guidance_scale: float = 7.5
+    ) -> Image.Image:
+        """
+        Apply clothing/dress to a person in an image using AI (virtual try-on).
+
+        Args:
+            image: Original PIL Image containing a person
+            clothing_description: Description of the clothing to apply
+            strength: How strongly to apply the clothing (0.0-1.0)
+            num_inference_steps: Number of denoising steps
+            guidance_scale: How closely to follow the clothing description
+
+        Returns:
+            Image with the specified clothing applied
+        """
+        if self.img2img_pipeline is None:
+            self.load_img2img_pipeline()
+
+        # Ensure image is RGB
+        image = image.convert("RGB")
+
+        # Resize to supported dimensions
+        width, height = image.size
+        width = (width // 8) * 8
+        height = (height // 8) * 8
+        image = image.resize((width, height), Image.Resampling.LANCZOS)
+
+        # Build a prompt that focuses on clothing application
+        prompt = (
+            f"a person wearing {clothing_description}, "
+            "full body portrait, fashion photography, high quality, realistic, "
+            "detailed clothing texture, professional model photo"
+        )
+        negative_prompt = (
+            "nudity, nsfw, deformed, bad anatomy, blurry, low quality, "
+            "distorted face, extra limbs"
+        )
+
+        result = self.img2img_pipeline(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            image=image,
+            strength=strength,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale
+        )
+
+        return result.images[0]
+
     def generate_text_effect(
         self,
         text: str,
